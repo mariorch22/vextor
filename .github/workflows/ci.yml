@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  format-check:
+    name: clang-format check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run clang-format check
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '18'
+          check-path: 'src'
+
+      - name: Check test formatting
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '18'
+          check-path: 'tests'
+
+      - name: Check benchmark formatting
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '18'
+          check-path: 'benchmarks'
+
+  build-and-test:
+    name: ${{ matrix.compiler }} (${{ matrix.build_type }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: gcc-14
+            cc: gcc-14
+            cxx: g++-14
+            build_type: Release
+            sanitizers: false
+
+          - compiler: gcc-14
+            cc: gcc-14
+            cxx: g++-14
+            build_type: Debug
+            sanitizers: true
+
+          - compiler: clang-18
+            cc: clang-18
+            cxx: clang++-18
+            build_type: Release
+            sanitizers: false
+
+          - compiler: clang-18
+            cc: clang-18
+            cxx: clang++-18
+            build_type: Debug
+            sanitizers: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache FetchContent dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: fetchcontent-${{ matrix.compiler }}-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt', 'benchmarks/CMakeLists.txt') }}
+
+      - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DVEXDB_ENABLE_ASAN=${{ matrix.sanitizers && 'ON' || 'OFF' }} \
+            -DVEXDB_ENABLE_UBSAN=${{ matrix.sanitizers && 'ON' || 'OFF' }}
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
