@@ -9,7 +9,7 @@ set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googlebenchmark)
 
 add_executable(vexdb_bench
-    placeholder_bench.cpp
+    core_distance_bench.cpp
 )
 
 target_link_libraries(vexdb_bench PRIVATE vexdb benchmark::benchmark_main)
