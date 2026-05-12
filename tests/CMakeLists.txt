@@ -8,7 +8,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_executable(vexdb_tests
-    placeholder_test.cpp
+    core_types_test.cpp
 )
 
 target_link_libraries(vexdb_tests PRIVATE vexdb GTest::gtest_main)
