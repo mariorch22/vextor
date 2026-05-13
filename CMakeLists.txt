@@ -40,6 +40,7 @@ add_library(vexdb STATIC
     src/store/mmap_store.cpp
     src/segment/id_mapping.cpp
     src/segment/active_segment.cpp
+    src/segment/sealed_segment.cpp
 )
 
 target_include_directories(vexdb PUBLIC

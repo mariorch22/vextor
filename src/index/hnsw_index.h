@@ -262,6 +262,7 @@ class HnswIndex {
         std::priority_queue<Pair, std::vector<Pair>, std::greater<Pair>> candidates;
         std::priority_queue<Pair> results;
 
+        resize_visited(graph_.size());
         if (++current_gen_ == 0) {
             std::fill(visited_gen_.begin(), visited_gen_.end(), 0);
             current_gen_ = 1;
@@ -359,7 +360,7 @@ class HnswIndex {
 
     // ── Visited tracking ────────────────────────────────────
 
-    void resize_visited(std::size_t n) {
+    void resize_visited(std::size_t n) const {
         if (visited_gen_.size() < n) {
             visited_gen_.resize(n, 0);
         }
