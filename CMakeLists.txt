@@ -41,6 +41,8 @@ add_library(vexdb STATIC
     src/segment/id_mapping.cpp
     src/segment/active_segment.cpp
     src/segment/sealed_segment.cpp
+    src/persistence/serializer.cpp
+    src/persistence/loader.cpp
 )
 
 target_include_directories(vexdb PUBLIC

@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "store/format.h"
+#include "persistence/format.h"
 
 namespace vexdb {
 

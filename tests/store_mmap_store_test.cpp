@@ -6,7 +6,7 @@
 #include <fstream>
 #include <vector>
 
-#include "store/format.h"
+#include "persistence/format.h"
 #include "store/mmap_store.h"
 
 namespace {
