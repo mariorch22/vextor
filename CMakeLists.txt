@@ -37,6 +37,7 @@ add_library(vexdb STATIC
     src/core/sq8.cpp
     src/core/vexdb.cpp
     src/store/in_memory_store.cpp
+    src/store/mmap_store.cpp
 )
 
 target_include_directories(vexdb PUBLIC
