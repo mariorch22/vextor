@@ -12,6 +12,7 @@ add_executable(vexdb_bench
     core_distance_bench.cpp
     core_sq8_bench.cpp
     index_flat_index_bench.cpp
+    index_hnsw_index_bench.cpp
 )
 
 target_link_libraries(vexdb_bench PRIVATE vexdb benchmark::benchmark_main)
