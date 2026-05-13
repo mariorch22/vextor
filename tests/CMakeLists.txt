@@ -14,6 +14,7 @@ add_executable(vexdb_tests
     store_in_memory_store_test.cpp
     store_mmap_store_test.cpp
     index_flat_index_test.cpp
+    index_hnsw_index_test.cpp
 )
 
 target_link_libraries(vexdb_tests PRIVATE vexdb GTest::gtest_main)
