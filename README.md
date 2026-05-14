@@ -13,7 +13,7 @@ graph LR
 
 | Layer | Contents |
 |---|---|
-| **core** | types, L2 distance (AVX2 + scalar), SQ8 quantization |
+| **core** | types, L2 distance (AVX2 + scalar, compile-time dispatch), SQ8 quantization |
 | **store** | VectorStore concept, InMemoryStore, MmapStore |
 | **index** | HnswIndex\<Store\>, FlatIndex\<Store\> |
 | **segment** | ActiveSegment, SealedSegment, SegmentManager |

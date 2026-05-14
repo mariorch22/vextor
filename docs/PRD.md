@@ -42,7 +42,7 @@ Secondary audience: developers who want an embeddable vector search library for 
 - **Storage backends**: InMemoryStore (std::vector\<float\>) and MmapStore (mmap, zero-copy). Unified via C++20 VectorStore concept.
 - **Persistence**: Binary formats for vectors (VEX0), graph (HNSW), and ID mapping. JSON metadata for segment registry.
 - **SegmentManager**: Holds one ActiveSegment and N SealedSegments. Search fans out to all segments and merges global top-k.
-- **Distance functions**: L2 with AVX2 SIMD (8-wide float) and scalar fallback. Runtime dispatch.
+- **Distance functions**: L2 with AVX2 SIMD (8-wide float) and scalar fallback. Compile-time dispatch.
 - **Scalar quantization (SQ8)**: float32 → uint8 encoding with asymmetric distance computation (query stays float32, database vectors quantized). 4x memory reduction on vector data with minimal recall loss.
 - **ID mapping**: Bidirectional translation between user-provided uint64 IDs and internal offsets.
 - **Python bindings**: nanobind wrapper exposing insert, search, save, load.
