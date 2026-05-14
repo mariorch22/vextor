@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <stdexcept>
 
 #include "persistence/loader.h"
@@ -121,12 +122,17 @@ SegmentManager SegmentManager::load(const std::string& path) {
     auto capacity = static_cast<std::size_t>(extract_uint("segment_capacity"));
     auto m = static_cast<int>(extract_uint("m"));
     auto ef = static_cast<int>(extract_uint("ef_construction"));
-    auto seg_count = static_cast<int>(extract_uint("segment_count"));
-    if (seg_count < 0) throw std::runtime_error("load: negative segment_count");
+
+    const unsigned long long seg_count_raw = extract_uint("segment_count");
+    if (seg_count_raw >
+        static_cast<unsigned long long>((std::numeric_limits<std::size_t>::max)())) {
+        throw std::runtime_error("load: segment_count out of range");
+    }
+    const std::size_t seg_count = static_cast<std::size_t>(seg_count_raw);
 
     SegmentManager mgr(dim, capacity, path, m, ef);
 
-    for (int i = 0; i < seg_count; i++) {
+    for (std::size_t i = 0; i < seg_count; i++) {
         mgr.sealed_.push_back(load_segment_mmap(path + "/segment_" + std::to_string(i)));
         for (VectorId id : mgr.sealed_.back().id_mapping().offset_to_id()) {
             mgr.all_ids_.insert(id);
