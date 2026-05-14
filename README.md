@@ -23,6 +23,10 @@ Templates live in `store/` and `index/`. Everything from `segment/` up exposes o
 
 See [docs/PRD.md](docs/PRD.md) for the full design rationale.
 
+## Code style
+
+Code follows STL/snake_case naming convention: types in `PascalCase`, functions and variables in `snake_case`, namespace `vexdb` in lowercase.
+
 ## Build
 
 Requires CMake 3.20+, a C++20 compiler (GCC 14+ or Clang 18+).
