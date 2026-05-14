@@ -50,9 +50,12 @@ class HnswIndex {
     }
 
     HnswIndex(const Store& store, HnswGraph graph)
-        : store_(store), ef_construction_(0), graph_(std::move(graph)) {
+        : store_(store), graph_(std::move(graph)), ef_construction_(0) {
         resize_visited(graph_.size());
     }
+
+    // Move the graph out. Index is invalid after this call.
+    HnswGraph take_graph() { return std::move(graph_); }
 
     // Access to graph structure (for persistence and testing).
     [[nodiscard]] const HnswGraph& graph() const { return graph_; }

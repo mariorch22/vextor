@@ -15,23 +15,18 @@ static void validate_components(std::size_t store_size, std::size_t graph_size,
 SealedSegment SealedSegment::from_memory(InMemoryStore store, HnswGraph graph,
                                          IdMapping id_mapping) {
     validate_components(store.size(), graph.size(), id_mapping.size());
-    int m = graph.m;
     SealedSegment seg;
     seg.id_mapping_ = std::move(id_mapping);
-    auto backend = std::make_unique<TypedBackend<InMemoryStore>>(std::move(store), m);
-    backend->index.graph() = std::move(graph);
-    seg.backend_ = std::move(backend);
+    seg.backend_ =
+        std::make_unique<TypedBackend<InMemoryStore>>(std::move(store), std::move(graph));
     return seg;
 }
 
 SealedSegment SealedSegment::from_mmap(MmapStore store, HnswGraph graph, IdMapping id_mapping) {
     validate_components(store.size(), graph.size(), id_mapping.size());
-    int m = graph.m;
     SealedSegment seg;
     seg.id_mapping_ = std::move(id_mapping);
-    auto backend = std::make_unique<TypedBackend<MmapStore>>(std::move(store), m);
-    backend->index.graph() = std::move(graph);
-    seg.backend_ = std::move(backend);
+    seg.backend_ = std::make_unique<TypedBackend<MmapStore>>(std::move(store), std::move(graph));
     return seg;
 }
 

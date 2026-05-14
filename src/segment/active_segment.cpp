@@ -14,6 +14,9 @@ void ActiveSegment::insert(VectorId user_id, const float* data) {
     if (id_mapping_.get_offset(user_id).has_value()) {
         throw std::invalid_argument("ActiveSegment: duplicate user_id");
     }
+
+    // TODO: not exception-safe — if index_.insert() throws,
+    // store is permanently one vector ahead.
     store_.add_vector(data);
     index_.insert();
     id_mapping_.insert(user_id);
