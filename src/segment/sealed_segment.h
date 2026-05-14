@@ -19,7 +19,8 @@ class SealedSegment {
     static SealedSegment from_memory(InMemoryStore store, HnswGraph graph, IdMapping id_mapping);
     static SealedSegment from_mmap(MmapStore store, HnswGraph graph, IdMapping id_mapping);
 
-    std::vector<QueryResult> search(const float* query, std::size_t k, int ef_search = 128) const;
+    [[nodiscard]] std::vector<QueryResult> search(const float* query, std::size_t k,
+                                                  int ef_search = 128) const;
 
     std::size_t size() const;
     Dim dimensions() const;

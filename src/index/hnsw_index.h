@@ -55,7 +55,7 @@ class HnswIndex {
     }
 
     // Move the graph out. Index is invalid after this call.
-    HnswGraph take_graph() { return std::move(graph_); }
+    [[nodiscard]] HnswGraph take_graph() { return std::move(graph_); }
 
     // Access to graph structure (for persistence and testing).
     [[nodiscard]] const HnswGraph& graph() const { return graph_; }

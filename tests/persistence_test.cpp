@@ -136,6 +136,10 @@ TEST(Persistence, SearchResultsMatchBeforeAndAfterSeal) {
 }
 
 TEST(Persistence, LoadInvalidDirectoryThrows) {
-    EXPECT_THROW(vexdb::load_segment_memory("/nonexistent/path"), std::runtime_error);
-    EXPECT_THROW(vexdb::load_segment_mmap("/nonexistent/path"), std::runtime_error);
+    EXPECT_THROW(
+        ([] { [[maybe_unused]] const auto _ = vexdb::load_segment_memory("/nonexistent/path"); }()),
+        std::runtime_error);
+    EXPECT_THROW(
+        ([] { [[maybe_unused]] const auto _ = vexdb::load_segment_mmap("/nonexistent/path"); }()),
+        std::runtime_error);
 }

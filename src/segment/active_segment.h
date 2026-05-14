@@ -19,10 +19,10 @@ class ActiveSegment {
     [[nodiscard]] std::vector<QueryResult> search(const float* query, std::size_t k,
                                                   int ef_search = 128) const;
 
-    [[nodiscard]] std::size_t size() const;
-    [[nodiscard]] std::size_t capacity() const;
-    [[nodiscard]] bool is_full() const;
-    [[nodiscard]] Dim dimensions() const;
+    std::size_t size() const;
+    std::size_t capacity() const;
+    bool is_full() const;
+    Dim dimensions() const;
 
     const InMemoryStore& store() const { return store_; }
     const HnswIndex<InMemoryStore>& index() const { return index_; }

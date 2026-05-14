@@ -18,7 +18,7 @@ class FlatIndex {
     explicit FlatIndex(const Store& store) : store_(store) {}
 
     // Brute-force search: compute distance to every vector, return top-k closest.
-    std::vector<SearchResult> search(const float* query, std::size_t k) const {
+    [[nodiscard]] std::vector<SearchResult> search(const float* query, std::size_t k) const {
         if (k == 0 || store_.size() == 0) return {};
 
         // Max-heap: farthest on top, so we can evict the worst candidate.
