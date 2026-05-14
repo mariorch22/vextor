@@ -108,18 +108,20 @@ SegmentManager SegmentManager::load(const std::string& path) {
 
     std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 
-    auto extract_int = [&](const std::string& key) -> int {
+    auto extract_uint = [&](const std::string& key) -> unsigned long long {
         auto pos = content.find("\"" + key + "\"");
         if (pos == std::string::npos) throw std::runtime_error("load: missing key " + key);
         pos = content.find(':', pos);
-        return std::stoi(content.substr(pos + 1));
+        auto val = std::stoull(content.substr(pos + 1));
+        return val;
     };
 
-    Dim dim = static_cast<Dim>(extract_int("dim"));
-    auto capacity = static_cast<std::size_t>(extract_int("segment_capacity"));
-    int m = extract_int("m");
-    int ef = extract_int("ef_construction");
-    int seg_count = extract_int("segment_count");
+    Dim dim = static_cast<Dim>(extract_uint("dim"));
+    auto capacity = static_cast<std::size_t>(extract_uint("segment_capacity"));
+    auto m = static_cast<int>(extract_uint("m"));
+    auto ef = static_cast<int>(extract_uint("ef_construction"));
+    auto seg_count = static_cast<int>(extract_uint("segment_count"));
+    if (seg_count < 0) throw std::runtime_error("load: negative segment_count");
 
     SegmentManager mgr(dim, capacity, path, m, ef);
 
