@@ -13,3 +13,8 @@ nanobind_add_module(vexdb_python
 )
 target_link_libraries(vexdb_python PRIVATE vexdb)
 set_target_properties(vexdb_python PROPERTIES OUTPUT_NAME "vexdb")
+
+# nanobind uses non-standard extensions that trigger -Wpedantic; suppress on third-party targets.
+# nanobind-static is created by nanobind_add_module, so these must come after.
+target_compile_options(nanobind-static PRIVATE -w)
+target_compile_options(vexdb_python PRIVATE -Wno-nested-anon-types -Wno-zero-length-array)

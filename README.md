@@ -43,6 +43,19 @@ ctest --test-dir build --output-on-failure
 ./build/benchmarks/vexdb_bench
 ```
 
+### SIFT1M benchmark (optional)
+
+Requires the SIFT1M dataset (~160 MB download).
+
+```bash
+./benchmarks/sift1m/download.sh
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DVEXDB_BUILD_SIFT1M=ON
+cmake --build build
+cd benchmarks/sift1m && ../../build/benchmarks/sift1m/vexdb_sift1m
+```
+
+Results are written to `benchmarks/sift1m/results.md`.
+
 ### Python bindings (optional)
 
 Requires Python 3.8+ and NumPy.
@@ -115,6 +128,22 @@ Release build, single-threaded. Selected results from local runs:
 | HNSW search (100K, 128d) | 145 μs |
 
 HNSW is 4.2x faster than brute-force at 10K vectors. At 100K, HNSW search time grows sub-linearly (39 μs → 145 μs for 10x more vectors).
+
+### SIFT1M results
+
+1M vectors, 128d float32, single-threaded, via `SegmentManager` (capacity 1.1M, no seal during build).
+
+**Machine:** 12th Gen Intel(R) Core(TM) i7-1260P | 12 GB RAM | Linux 5.15.153.1-microsoft-standard-WSL2
+
+| M | ef_construction | ef_search | Recall@1 | Recall@10 | Recall@100 | QPS | Build (s) |
+|---|---|---|---|---|---|---|---|
+| 16 | 200 | 64 | 0.9902 | 0.9903 | 0.9478 | 3503 | 603.7 |
+| 16 | 200 | 128 | 0.9919 | 0.9941 | 0.9664 | 2810 | 603.7 |
+| 16 | 200 | 256 | 0.9939 | 0.9986 | 0.9923 | 1523 | 603.7 |
+| 32 | 400 | 128 | 0.9937 | 0.9985 | 0.9911 | 1605 | 1868.3 |
+| 32 | 400 | 256 | 0.9940 | 0.9993 | 0.9986 | 944 | 1868.3 |
+
+v0.1 gate (Recall@10 > 0.90): **PASSED** — alle 5 Configs erfüllen das Kriterium.
 
 ## Project status
 
