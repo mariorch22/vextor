@@ -43,13 +43,14 @@ Secondary audience: developers who want an embeddable vector search library for 
 - **Persistence**: Binary formats for vectors (VEX0), graph (HNSW), and ID mapping. JSON metadata for segment registry.
 - **SegmentManager**: Holds one ActiveSegment and N SealedSegments. Search fans out to all segments and merges global top-k.
 - **Distance functions**: L2 with AVX2 SIMD (8-wide float) and scalar fallback. Compile-time dispatch.
-- **Scalar quantization (SQ8)**: float32 → uint8 encoding with asymmetric distance computation (query stays float32, database vectors quantized). 4x memory reduction on vector data with minimal recall loss.
 - **ID mapping**: Bidirectional translation between user-provided uint64 IDs and internal offsets.
 - **Python bindings**: nanobind wrapper exposing insert, search, save, load.
 
 ### v0.2 — Performance
 
 - **Parallel search**: Thread pool for concurrent search across sealed segments.
+- **Pluggable distance functions**: Template parameter on `HnswIndex` and `FlatIndex` for L2, cosine, and inner product. Required foundation for SQ8 integration.
+- **SQ8 integration**: Implement a quantized store type and asymmetric distance dispatch (float32 query vs. uint8 database vectors). Requires pluggable distance functions above.
 - **Product Quantization (PQ)**: Compressed vector representation with asymmetric distance computation for reduced memory footprint and faster scan.
 - **Benchmarking suite**: Automated recall/latency/throughput measurement on SIFT1M with CI integration.
 
@@ -110,9 +111,8 @@ All benchmarks on SIFT1M (1M vectors, 128 dimensions), single-threaded unless no
 | Search throughput (batch, parallel) | — | > 1000 QPS |
 | Insert throughput | > 5K vec/s | > 10K vec/s |
 | Memory per vector (128d, float32) | ~700 bytes | ~200 bytes (PQ) |
-| Memory per vector (128d, SQ8) | ~300 bytes | — |
 
-Memory breakdown (128d, M=16): HNSW graph ~160 bytes + ID mapping 8 bytes is fixed overhead per vector regardless of quantization. Vector payload: float32 = 512 bytes, SQ8 = 128 bytes, PQ-16 = 16 bytes.
+Memory breakdown (128d, M=16): HNSW graph ~160 bytes + ID mapping 8 bytes is fixed overhead per vector regardless of quantization. Vector payload: float32 = 512 bytes, PQ-16 = 16 bytes.
 
 ## Architecture
 
@@ -165,7 +165,7 @@ Persistence is atomic at the segment level: seal() writes all three files (vecto
 
 ### v0.1.0 — MVP
 
-Scope: HNSW, dual-store, segment lifecycle, persistence, SQ8, Python bindings.
+Scope: HNSW, dual-store, segment lifecycle, persistence, Python bindings.
 
 Done when:
 - All GoogleTest tests green, ASan/UBSan clean

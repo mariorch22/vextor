@@ -122,7 +122,6 @@ Release build, single-threaded. Selected results from local runs:
 | L2 distance (scalar, 128d) | 43 ns |
 | L2 distance (AVX2, 128d) | 9 ns |
 | L2 distance (AVX2, 768d) | 80 ns |
-| SQ8 asymmetric (AVX2, 768d) | 123 ns/vector |
 | FlatIndex search (10K, 128d) | 163 μs |
 | HNSW search (10K, 128d) | 39 μs |
 | HNSW search (100K, 128d) | 145 μs |
