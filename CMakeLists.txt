@@ -35,7 +35,6 @@ check_cxx_compiler_flag("-mfma" COMPILER_SUPPORTS_FMA)
 add_library(vexdb STATIC
     src/core/distance.cpp
     src/core/sq8.cpp
-    src/core/vexdb.cpp
     src/store/in_memory_store.cpp
     src/store/mmap_store.cpp
     src/segment/id_mapping.cpp

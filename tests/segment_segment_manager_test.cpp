@@ -19,13 +19,13 @@ std::string make_temp_dir(const std::string& name) {
 TEST(SegmentManager, InsertAndSearch) {
     vexdb::SegmentManager mgr(4, 100);
 
-    mgr.insert(1, std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f}.data());
-    mgr.insert(2, std::vector<float>{0.0f, 1.0f, 0.0f, 0.0f}.data());
-    mgr.insert(3, std::vector<float>{0.0f, 0.0f, 1.0f, 0.0f}.data());
+    mgr.insert(1, std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f});
+    mgr.insert(2, std::vector<float>{0.0f, 1.0f, 0.0f, 0.0f});
+    mgr.insert(3, std::vector<float>{0.0f, 0.0f, 1.0f, 0.0f});
 
     EXPECT_EQ(mgr.total_vectors(), 3);
 
-    auto results = mgr.search(std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f}.data(), 1);
+    auto results = mgr.search(std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f}, 1);
     ASSERT_EQ(results.size(), 1);
     EXPECT_EQ(results[0].user_id, 1);
 }
@@ -33,12 +33,12 @@ TEST(SegmentManager, InsertAndSearch) {
 TEST(SegmentManager, SealOnCapacity) {
     vexdb::SegmentManager mgr(2, 3);
 
-    mgr.insert(1, std::vector<float>{0.0f, 0.0f}.data());
-    mgr.insert(2, std::vector<float>{1.0f, 0.0f}.data());
-    mgr.insert(3, std::vector<float>{2.0f, 0.0f}.data());
+    mgr.insert(1, std::vector<float>{0.0f, 0.0f});
+    mgr.insert(2, std::vector<float>{1.0f, 0.0f});
+    mgr.insert(3, std::vector<float>{2.0f, 0.0f});
     EXPECT_EQ(mgr.segment_count(), 1);
 
-    mgr.insert(4, std::vector<float>{3.0f, 0.0f}.data());
+    mgr.insert(4, std::vector<float>{3.0f, 0.0f});
     EXPECT_EQ(mgr.segment_count(), 2);
     EXPECT_EQ(mgr.total_vectors(), 4);
 }
@@ -46,16 +46,16 @@ TEST(SegmentManager, SealOnCapacity) {
 TEST(SegmentManager, SearchAcrossSegments) {
     vexdb::SegmentManager mgr(2, 3);
 
-    mgr.insert(10, std::vector<float>{0.0f, 0.0f}.data());
-    mgr.insert(20, std::vector<float>{1.0f, 0.0f}.data());
-    mgr.insert(30, std::vector<float>{2.0f, 0.0f}.data());
+    mgr.insert(10, std::vector<float>{0.0f, 0.0f});
+    mgr.insert(20, std::vector<float>{1.0f, 0.0f});
+    mgr.insert(30, std::vector<float>{2.0f, 0.0f});
     // Triggers seal.
-    mgr.insert(40, std::vector<float>{10.0f, 0.0f}.data());
-    mgr.insert(50, std::vector<float>{11.0f, 0.0f}.data());
+    mgr.insert(40, std::vector<float>{10.0f, 0.0f});
+    mgr.insert(50, std::vector<float>{11.0f, 0.0f});
 
     EXPECT_EQ(mgr.segment_count(), 2);
 
-    auto results = mgr.search(std::vector<float>{0.0f, 0.0f}.data(), 3);
+    auto results = mgr.search(std::vector<float>{0.0f, 0.0f}, 3);
     ASSERT_EQ(results.size(), 3);
     EXPECT_EQ(results[0].user_id, 10);
     EXPECT_FLOAT_EQ(results[0].distance, 0.0f);
@@ -77,7 +77,7 @@ TEST(SegmentManager, SaveAndLoadRoundTrip) {
         for (int i = 0; i < 30; i++) {
             std::vector<float> v(8);
             for (auto& x : v) x = dist(rng);
-            mgr.insert(static_cast<vexdb::VectorId>(i), v.data());
+            mgr.insert(static_cast<vexdb::VectorId>(i), v);
         }
 
         mgr.save();
@@ -92,7 +92,7 @@ TEST(SegmentManager, SaveAndLoadRoundTrip) {
     std::vector<float> query(8);
     for (auto& x : query) x = dist(rng);
 
-    auto results = mgr.search(query.data(), 5, 128);
+    auto results = mgr.search(query, 5, 128);
     ASSERT_EQ(results.size(), 5);
 
     for (std::size_t i = 1; i < results.size(); i++) {
@@ -110,7 +110,7 @@ TEST(SegmentManager, SaveAndLoadWithSealedSegments) {
 
         for (int i = 0; i < 12; i++) {
             std::vector<float> v = {static_cast<float>(i), 0.0f, 0.0f, 0.0f};
-            mgr.insert(static_cast<vexdb::VectorId>(i), v.data());
+            mgr.insert(static_cast<vexdb::VectorId>(i), v);
         }
 
         // Should have sealed twice: 5 + 5 sealed, 2 active.
@@ -122,7 +122,7 @@ TEST(SegmentManager, SaveAndLoadWithSealedSegments) {
     // 2 sealed (from seal_active) + active serialized = 3 segments loaded as sealed.
     EXPECT_EQ(mgr.total_vectors(), 12);
 
-    auto results = mgr.search(std::vector<float>{0.0f, 0.0f, 0.0f, 0.0f}.data(), 3);
+    auto results = mgr.search(std::vector<float>{0.0f, 0.0f, 0.0f, 0.0f}, 3);
     ASSERT_EQ(results.size(), 3);
     EXPECT_EQ(results[0].user_id, 0);
 
@@ -132,16 +132,16 @@ TEST(SegmentManager, SaveAndLoadWithSealedSegments) {
 TEST(SegmentManager, DuplicateIdAcrossSegmentsThrows) {
     vexdb::SegmentManager mgr(2, 3);
 
-    mgr.insert(42, std::vector<float>{0.0f, 0.0f}.data());
-    mgr.insert(43, std::vector<float>{1.0f, 0.0f}.data());
-    mgr.insert(44, std::vector<float>{2.0f, 0.0f}.data());
+    mgr.insert(42, std::vector<float>{0.0f, 0.0f});
+    mgr.insert(43, std::vector<float>{1.0f, 0.0f});
+    mgr.insert(44, std::vector<float>{2.0f, 0.0f});
     // Triggers seal.
-    mgr.insert(45, std::vector<float>{3.0f, 0.0f}.data());
+    mgr.insert(45, std::vector<float>{3.0f, 0.0f});
 
     EXPECT_EQ(mgr.segment_count(), 2);
 
     // ID 42 is in a sealed segment — inserting again should throw.
-    EXPECT_THROW(mgr.insert(42, std::vector<float>{4.0f, 0.0f}.data()), std::invalid_argument);
+    EXPECT_THROW(mgr.insert(42, std::vector<float>{4.0f, 0.0f}), std::invalid_argument);
 }
 
 TEST(SegmentManager, RecallAcrossSegments) {
@@ -156,7 +156,7 @@ TEST(SegmentManager, RecallAcrossSegments) {
     for (int i = 0; i < n; i++) {
         std::vector<float> v(dim);
         for (auto& x : v) x = dist(rng);
-        mgr.insert(static_cast<vexdb::VectorId>(i), v.data());
+        mgr.insert(static_cast<vexdb::VectorId>(i), v);
     }
 
     EXPECT_GE(mgr.segment_count(), 3);
@@ -164,7 +164,7 @@ TEST(SegmentManager, RecallAcrossSegments) {
     std::vector<float> query(dim);
     for (auto& x : query) x = dist(rng);
 
-    auto results = mgr.search(query.data(), 10, 128);
+    auto results = mgr.search(query, 10, 128);
     ASSERT_EQ(results.size(), 10);
 
     for (std::size_t i = 1; i < results.size(); i++) {
@@ -177,12 +177,30 @@ TEST(SegmentManager, DuplicateIdAfterLoadThrows) {
 
     {
         vexdb::SegmentManager mgr(2, 10, dir);
-        mgr.insert(42, std::vector<float>{1.0f, 0.0f}.data());
+        mgr.insert(42, std::vector<float>{1.0f, 0.0f});
         mgr.save();
     }
 
     auto mgr = vexdb::SegmentManager::load(dir);
-    EXPECT_THROW(mgr.insert(42, std::vector<float>{2.0f, 0.0f}.data()), std::invalid_argument);
+    EXPECT_THROW(mgr.insert(42, std::vector<float>{2.0f, 0.0f}), std::invalid_argument);
 
     std::filesystem::remove_all(dir);
+}
+
+TEST(SegmentManager, InsertWrongDimensionThrows) {
+    vexdb::SegmentManager mgr(4, 100);
+
+    EXPECT_THROW(mgr.insert(1, std::vector<float>{1.0f, 0.0f}), std::invalid_argument);
+    EXPECT_THROW(mgr.insert(1, std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f, 0.0f}),
+                 std::invalid_argument);
+    EXPECT_THROW(mgr.insert(1, std::span<const float>{}), std::invalid_argument);
+}
+
+TEST(SegmentManager, SearchWrongDimensionThrows) {
+    vexdb::SegmentManager mgr(4, 100);
+    mgr.insert(1, std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f});
+
+    EXPECT_THROW((void)mgr.search(std::vector<float>{1.0f, 0.0f}, 1), std::invalid_argument);
+    EXPECT_THROW((void)mgr.search(std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f, 0.0f}, 1),
+                 std::invalid_argument);
 }

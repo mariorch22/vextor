@@ -17,6 +17,9 @@ add_executable(vexdb_bench
 
 target_link_libraries(vexdb_bench PRIVATE vexdb benchmark::benchmark_main)
 
+add_executable(perf_test perf_test.cpp)
+target_link_libraries(perf_test PRIVATE vexdb)
+
 # --- SIFT1M benchmark (optional, needs dataset) ---
 option(VEXDB_BUILD_SIFT1M "Build SIFT1M benchmark" OFF)
 if(VEXDB_BUILD_SIFT1M)

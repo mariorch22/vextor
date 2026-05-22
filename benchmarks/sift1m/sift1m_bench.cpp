@@ -206,7 +206,8 @@ int main(int argc, char* argv[]) {
                 std::cout << "  Inserted " << i << "/" << base_count << std::endl;
             }
             db.insert(static_cast<vexdb::VectorId>(i),
-                      &base[static_cast<std::size_t>(i) * base_dim]);
+                      {&base[static_cast<std::size_t>(i) * base_dim],
+                       static_cast<std::size_t>(base_dim)});
         }
         auto t1 = std::chrono::high_resolution_clock::now();
         double build_s = std::chrono::duration<double>(t1 - t0).count();
@@ -220,16 +221,18 @@ int main(int argc, char* argv[]) {
             // Warmup: 100 queries to fill caches.
             int warmup = std::min(100, query_count);
             for (int q = 0; q < warmup; q++) {
-                const float* query = &queries[static_cast<std::size_t>(q) * query_dim];
-                (void)db.search(query, 100, sc.ef_search);
+                (void)db.search({&queries[static_cast<std::size_t>(q) * query_dim],
+                                 static_cast<std::size_t>(query_dim)},
+                                100, sc.ef_search);
             }
 
             // Pass 1: reine Suche — nur dieser Block wird für QPS gemessen.
             std::vector<std::vector<vexdb::QueryResult>> all_results(query_count);
             auto t2 = std::chrono::high_resolution_clock::now();
             for (int q = 0; q < query_count; q++) {
-                const float* qvec = &queries[static_cast<std::size_t>(q) * query_dim];
-                all_results[q] = db.search(qvec, 100, sc.ef_search);
+                all_results[q] = db.search({&queries[static_cast<std::size_t>(q) * query_dim],
+                                            static_cast<std::size_t>(query_dim)},
+                                           100, sc.ef_search);
             }
             auto t3 = std::chrono::high_resolution_clock::now();
 

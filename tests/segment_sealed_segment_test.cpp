@@ -23,7 +23,7 @@ static vexdb::SealedSegment make_sealed_from_active(int n, vexdb::Dim dim) {
         id_mapping.insert(static_cast<vexdb::VectorId>(1000 + i));
     }
 
-    return vexdb::SealedSegment::from_memory(std::move(store), std::move(index.graph()),
+    return vexdb::SealedSegment::from_memory(std::move(store), index.graph(),
                                              std::move(id_mapping));
 }
 
@@ -50,8 +50,8 @@ TEST(SealedSegment, SearchReturnsUserIds) {
     index.insert();
     id_mapping.insert(77);
 
-    auto seg = vexdb::SealedSegment::from_memory(std::move(store), std::move(index.graph()),
-                                                 std::move(id_mapping));
+    auto seg =
+        vexdb::SealedSegment::from_memory(std::move(store), index.graph(), std::move(id_mapping));
 
     std::vector<float> query = {0.0f, 0.0f};
     auto results = seg.search(query.data(), 3);
@@ -99,8 +99,8 @@ TEST(SealedSegment, LargeUserIdPreserved) {
     index.insert();
     id_mapping.insert(big_id);
 
-    auto seg = vexdb::SealedSegment::from_memory(std::move(store), std::move(index.graph()),
-                                                 std::move(id_mapping));
+    auto seg =
+        vexdb::SealedSegment::from_memory(std::move(store), index.graph(), std::move(id_mapping));
 
     auto results = seg.search(std::vector<float>{1.0f, 0.0f}.data(), 1);
     ASSERT_EQ(results.size(), 1);

@@ -29,18 +29,24 @@ Code follows STL/snake_case naming convention: types in `PascalCase`, functions 
 
 ## Build
 
-Requires CMake 3.20+, a C++20 compiler (GCC 14+ or Clang 18+).
+Requires CMake 3.20+, Ninja, and a C++20 compiler (GCC 14+ or Clang 18+). Three presets are available:
+
+| Preset | Description |
+|---|---|
+| `dev` | Debug build with ASan + UBSan |
+| `release` | Optimized build |
+| `release-python` | Optimized build + Python bindings |
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build
+cmake --preset release
+cmake --build build-release
 ```
 
 Run tests and benchmarks:
 
 ```bash
-ctest --test-dir build --output-on-failure
-./build/benchmarks/vexdb_bench
+ctest --test-dir build-release --output-on-failure
+./build-release/benchmarks/vexdb_bench
 ```
 
 ### SIFT1M benchmark (optional)
@@ -49,9 +55,9 @@ Requires the SIFT1M dataset (~160 MB download).
 
 ```bash
 ./benchmarks/sift1m/download.sh
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DVEXDB_BUILD_SIFT1M=ON
-cmake --build build
-cd benchmarks/sift1m && ../../build/benchmarks/sift1m/vexdb_sift1m
+cmake --preset release -DVEXDB_BUILD_SIFT1M=ON
+cmake --build build-release
+./build-release/benchmarks/sift1m/vexdb_sift1m
 ```
 
 Results are written to `benchmarks/sift1m/results.md`.
@@ -61,9 +67,9 @@ Results are written to `benchmarks/sift1m/results.md`.
 Requires Python 3.8+ and NumPy.
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DVEXDB_BUILD_PYTHON=ON
-cmake --build build
-PYTHONPATH=build/python python3 -c "import vexdb; print('ok')"
+cmake --preset release-python
+cmake --build build-release-python
+PYTHONPATH=build-release-python/python python3 -c "import vexdb; print('ok')"
 ```
 
 ## Usage
@@ -79,18 +85,18 @@ vexdb::SegmentManager db(/*dim=*/768, /*segment_capacity=*/1000000);
 
 // Insert
 std::vector<float> vec(768, 0.0f);
-db.insert(/*user_id=*/42, vec.data());
+db.insert(/*user_id=*/42, vec);
 
 // Search
 std::vector<float> query(768, 1.0f);
-auto results = db.search(query.data(), /*k=*/10);
+auto results = db.search(query, /*k=*/10);
 for (const auto& r : results) {
     // r.user_id, r.distance
 }
 
 // With persistence
 vexdb::SegmentManager db2(768, 1000000, "path/to/db");
-db2.insert(42, vec.data());
+db2.insert(42, vec);
 db2.save();
 auto loaded = vexdb::SegmentManager::load("path/to/db");
 ```
@@ -122,7 +128,6 @@ Release build, single-threaded. Selected results from local runs:
 | L2 distance (scalar, 128d) | 43 ns |
 | L2 distance (AVX2, 128d) | 9 ns |
 | L2 distance (AVX2, 768d) | 80 ns |
-| SQ8 asymmetric (AVX2, 768d) | 123 ns/vector |
 | FlatIndex search (10K, 128d) | 163 μs |
 | HNSW search (10K, 128d) | 39 μs |
 | HNSW search (100K, 128d) | 145 μs |

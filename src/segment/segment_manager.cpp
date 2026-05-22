@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <limits>
+#include <span>
 #include <stdexcept>
 
 #include "persistence/loader.h"
@@ -24,28 +25,36 @@ SegmentManager::SegmentManager(Dim dim, std::size_t segment_capacity, const std:
     }
 }
 
-void SegmentManager::insert(VectorId user_id, const float* data) {
+void SegmentManager::insert(VectorId user_id, std::span<const float> data) {
+    if (data.size() != dim_) {
+        throw std::invalid_argument("SegmentManager: expected " + std::to_string(dim_) +
+                                    " dimensions, got " + std::to_string(data.size()));
+    }
     if (all_ids_.count(user_id)) {
         throw std::invalid_argument("SegmentManager: duplicate user_id");
     }
     if (active_->is_full()) {
         seal_active();
     }
-    active_->insert(user_id, data);
+    active_->insert(user_id, data.data());
     all_ids_.insert(user_id);
 }
 
-std::vector<QueryResult> SegmentManager::search(const float* query, std::size_t k,
+std::vector<QueryResult> SegmentManager::search(std::span<const float> query, std::size_t k,
                                                 int ef_search) const {
+    if (query.size() != dim_) {
+        throw std::invalid_argument("SegmentManager: expected " + std::to_string(dim_) +
+                                    " dimensions, got " + std::to_string(query.size()));
+    }
     std::vector<QueryResult> all;
 
     if (active_->size() > 0) {
-        auto r = active_->search(query, k, ef_search);
+        auto r = active_->search(query.data(), k, ef_search);
         all.insert(all.end(), r.begin(), r.end());
     }
 
     for (const auto& seg : sealed_) {
-        auto r = seg.search(query, k, ef_search);
+        auto r = seg.search(query.data(), k, ef_search);
         all.insert(all.end(), r.begin(), r.end());
     }
 

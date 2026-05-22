@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <span>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -18,8 +19,8 @@ class SegmentManager {
     explicit SegmentManager(Dim dim, std::size_t segment_capacity, const std::string& db_path = "",
                             int m = 16, int ef_construction = 200);
 
-    void insert(VectorId user_id, const float* data);
-    [[nodiscard]] std::vector<QueryResult> search(const float* query, std::size_t k,
+    void insert(VectorId user_id, std::span<const float> data);
+    [[nodiscard]] std::vector<QueryResult> search(std::span<const float> query, std::size_t k,
                                                   int ef_search = 128) const;
 
     // Flush: persist the active segment and write segments.json.

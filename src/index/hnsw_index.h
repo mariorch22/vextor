@@ -70,19 +70,18 @@ class HnswIndex {
             throw std::out_of_range("HnswIndex: no vector available for insert");
         }
 
-        Offset vector_id = static_cast<Offset>(graph_.size());
         float u = std::max(level_dist_(rng_), std::numeric_limits<float>::min());
         int level = static_cast<int>(-std::log(u) * (1.0 / std::log(graph_.m)));
+        Offset vector_id = add_node(level);
 
+        // first node
         if (graph_.empty) {
             graph_.entry_point = vector_id;
             graph_.max_level = level;
             graph_.empty = false;
-            add_node(level);
             return;
         }
 
-        add_node(level);
         Dim dim = store_.dimensions();
         const float* query = store_.get_vector(vector_id);
 
@@ -194,7 +193,7 @@ class HnswIndex {
     int layer0_stride() const { return graph_.layer0_stride(); }
     int max_connections(int layer) const { return layer == 0 ? max_m0() : graph_.m; }
 
-    void add_node(int level) {
+    Offset add_node(int level) {
         graph_.levels.push_back(level);
         graph_.layer0_count.push_back(0);
         graph_.layer0.insert(graph_.layer0.end(), layer0_stride(), 0);
@@ -203,6 +202,7 @@ class HnswIndex {
             graph_.upper.back().resize(level);
         }
         resize_visited(graph_.size());
+        return static_cast<Offset>(graph_.size() - 1);
     }
 
     // ── Neighbor access ─────────────────────────────────────

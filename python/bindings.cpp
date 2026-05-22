@@ -23,9 +23,7 @@ NB_MODULE(vexdb, m) {
             "insert",
             [](vexdb::SegmentManager& self, vexdb::VectorId user_id,
                nb::ndarray<float, nb::ndim<1>, nb::c_contig> vec) {
-                if (vec.shape(0) != self.dimensions())
-                    throw std::invalid_argument("vector length must match dimensions");
-                self.insert(user_id, vec.data());
+                self.insert(user_id, {vec.data(), vec.shape(0)});
             },
             nb::arg("user_id"), nb::arg("vector").noconvert())
 
@@ -35,11 +33,12 @@ NB_MODULE(vexdb, m) {
                nb::ndarray<float, nb::ndim<2>, nb::c_contig> vecs) {
                 if (ids.shape(0) != vecs.shape(0))
                     throw std::invalid_argument("user_ids and vectors must have same length");
-                if (vecs.shape(1) != self.dimensions())
-                    throw std::invalid_argument("vector dimensions must match database");
                 auto n = ids.shape(0);
+                auto dim = self.dimensions();
+                if (vecs.shape(1) != dim)
+                    throw std::invalid_argument("vector dimensions must match database");
                 for (std::size_t i = 0; i < n; i++) {
-                    self.insert(ids(i), &vecs(i, 0));
+                    self.insert(ids(i), {&vecs(i, 0), dim});
                 }
             },
             nb::arg("user_ids").noconvert(), nb::arg("vectors").noconvert())
@@ -48,9 +47,7 @@ NB_MODULE(vexdb, m) {
             "search",
             [](const vexdb::SegmentManager& self,
                nb::ndarray<float, nb::ndim<1>, nb::c_contig> query, std::size_t k) {
-                if (query.shape(0) != self.dimensions())
-                    throw std::invalid_argument("query length must match dimensions");
-                auto results = self.search(query.data(), k);
+                auto results = self.search({query.data(), query.shape(0)}, k);
                 nb::list out;
                 for (const auto& r : results) {
                     out.append(nb::make_tuple(r.user_id, r.distance));
