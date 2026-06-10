@@ -84,9 +84,13 @@ jobs:
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
+        # -O1 for Debug: sanitizers don't need -O0, and the HNSW construction
+        # tests are unusably slow unoptimized (ASan docs recommend -O1).
+        # Asserts stay active (still a Debug build, NDEBUG undefined).
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_CXX_FLAGS_DEBUG="-O1 -g" \
             -DVEXTOR_ENABLE_ASAN=${{ matrix.sanitizers && 'ON' || 'OFF' }} \
             -DVEXTOR_ENABLE_UBSAN=${{ matrix.sanitizers && 'ON' || 'OFF' }}
 
@@ -94,4 +98,4 @@ jobs:
         run: cmake --build build -j$(nproc)
 
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --test-dir build --output-on-failure --parallel $(nproc)

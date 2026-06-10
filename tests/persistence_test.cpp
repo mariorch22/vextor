@@ -11,8 +11,11 @@
 
 namespace {
 
-std::string temp_dir() {
-    auto path = std::filesystem::temp_directory_path() / "vextor_persist_test";
+// One directory per test so tests stay independent under `ctest --parallel`
+// (a shared directory would be removed by whichever test finishes first).
+std::string temp_dir(const std::string& name) {
+    auto path = std::filesystem::temp_directory_path() / ("vextor_persist_" + name);
+    std::filesystem::remove_all(path);
     std::filesystem::create_directories(path);
     return path.string();
 }
@@ -38,7 +41,7 @@ TEST(Persistence, RoundTripMemory) {
         inserted_ids.push_back(id);
     }
 
-    auto dir = temp_dir();
+    auto dir = temp_dir("round_trip_memory");
     vextor::serialize_segment(seg, dir + "/seg0");
 
     auto sealed = vextor::load_segment_memory(dir + "/seg0");
@@ -78,7 +81,7 @@ TEST(Persistence, RoundTripMmap) {
         seg.insert(static_cast<vextor::VectorId>(i), v.data());
     }
 
-    auto dir = temp_dir();
+    auto dir = temp_dir("round_trip_mmap");
     vextor::serialize_segment(seg, dir + "/seg_mmap");
 
     auto sealed = vextor::load_segment_mmap(dir + "/seg_mmap");
@@ -119,7 +122,7 @@ TEST(Persistence, SearchResultsMatchBeforeAndAfterSeal) {
     auto before = seg.search(query.data(), 10, 128);
 
     // Seal and reload.
-    auto dir = temp_dir();
+    auto dir = temp_dir("match_before_after_seal");
     vextor::serialize_segment(seg, dir + "/seg_match");
     auto sealed = vextor::load_segment_memory(dir + "/seg_match");
 
