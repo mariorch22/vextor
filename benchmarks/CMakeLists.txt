@@ -6,6 +6,9 @@ FetchContent_Declare(
     GIT_TAG v1.9.1
 )
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+# benchmark builds itself with -Werror; gcc-14 at -O1 hits a libstdc++
+# maybe-uninitialized false positive in <regex>, breaking the build.
+set(BENCHMARK_ENABLE_WERROR OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googlebenchmark)
 
 add_executable(vextor_bench
