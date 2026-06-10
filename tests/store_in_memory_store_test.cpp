@@ -6,16 +6,16 @@
 #include "store/in_memory_store.h"
 
 TEST(InMemoryStore, StartsEmpty) {
-    vexdb::InMemoryStore store(4);
+    vextor::InMemoryStore store(4);
     EXPECT_EQ(store.size(), 0);
     EXPECT_EQ(store.dimensions(), 4);
 }
 
 TEST(InMemoryStore, AddAndRetrieveSingleVector) {
-    vexdb::InMemoryStore store(3);
+    vextor::InMemoryStore store(3);
     std::vector<float> vec = {1.0f, 2.0f, 3.0f};
 
-    vexdb::Offset offset = store.add_vector(vec.data());
+    vextor::Offset offset = store.add_vector(vec.data());
 
     EXPECT_EQ(offset, 0);
     EXPECT_EQ(store.size(), 1);
@@ -27,7 +27,7 @@ TEST(InMemoryStore, AddAndRetrieveSingleVector) {
 }
 
 TEST(InMemoryStore, AddMultipleVectors) {
-    vexdb::InMemoryStore store(2);
+    vextor::InMemoryStore store(2);
     std::vector<float> v0 = {1.0f, 2.0f};
     std::vector<float> v1 = {3.0f, 4.0f};
     std::vector<float> v2 = {5.0f, 6.0f};
@@ -43,8 +43,8 @@ TEST(InMemoryStore, AddMultipleVectors) {
 }
 
 TEST(InMemoryStore, DataIntegrityAfterManyInserts) {
-    vexdb::Dim dim = 128;
-    vexdb::InMemoryStore store(dim);
+    vextor::Dim dim = 128;
+    vextor::InMemoryStore store(dim);
     const int n = 1000;
 
     // Insert n vectors with known patterns
@@ -57,8 +57,8 @@ TEST(InMemoryStore, DataIntegrityAfterManyInserts) {
 
     // Verify each vector
     for (int i = 0; i < n; i++) {
-        const float* vec = store.get_vector(static_cast<vexdb::Offset>(i));
-        for (vexdb::Dim d = 0; d < dim; d++) {
+        const float* vec = store.get_vector(static_cast<vextor::Offset>(i));
+        for (vextor::Dim d = 0; d < dim; d++) {
             EXPECT_EQ(vec[d], static_cast<float>(i)) << "Mismatch at vector " << i << " dim " << d;
         }
     }
@@ -67,7 +67,7 @@ TEST(InMemoryStore, DataIntegrityAfterManyInserts) {
 TEST(InMemoryStore, OffsetsValidAfterReallocation) {
     // After many inserts, earlier get_vector calls should still return valid data.
     // Note: pointers may be invalidated by realloc, but offsets always work.
-    vexdb::InMemoryStore store(4);
+    vextor::InMemoryStore store(4);
 
     for (int i = 0; i < 10000; i++) {
         std::vector<float> vec(4, static_cast<float>(i));

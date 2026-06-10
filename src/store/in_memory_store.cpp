@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-namespace vexdb {
+namespace vextor {
 
 InMemoryStore::InMemoryStore(Dim dim) : dim_(dim) {
     assert(dim > 0);
@@ -32,4 +32,4 @@ Dim InMemoryStore::dimensions() const {
     return dim_;
 }
 
-}  // namespace vexdb
+}  // namespace vextor

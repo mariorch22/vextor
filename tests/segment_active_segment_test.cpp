@@ -7,7 +7,7 @@
 #include "segment/active_segment.h"
 
 TEST(ActiveSegment, InsertAndSearchRoundTrip) {
-    vexdb::ActiveSegment seg(4, 100);
+    vextor::ActiveSegment seg(4, 100);
 
     std::vector<float> v0 = {1.0f, 0.0f, 0.0f, 0.0f};
     std::vector<float> v1 = {0.0f, 1.0f, 0.0f, 0.0f};
@@ -28,7 +28,7 @@ TEST(ActiveSegment, InsertAndSearchRoundTrip) {
 }
 
 TEST(ActiveSegment, SearchReturnsUserIds) {
-    vexdb::ActiveSegment seg(2, 100);
+    vextor::ActiveSegment seg(2, 100);
 
     seg.insert(42, std::vector<float>{0.0f, 0.0f}.data());
     seg.insert(99, std::vector<float>{1.0f, 0.0f}.data());
@@ -39,7 +39,7 @@ TEST(ActiveSegment, SearchReturnsUserIds) {
 
     ASSERT_EQ(results.size(), 3);
 
-    std::set<vexdb::VectorId> ids;
+    std::set<vextor::VectorId> ids;
     for (const auto& r : results) ids.insert(r.user_id);
 
     EXPECT_TRUE(ids.count(42));
@@ -48,9 +48,9 @@ TEST(ActiveSegment, SearchReturnsUserIds) {
 }
 
 TEST(ActiveSegment, LargeUserIdPreserved) {
-    vexdb::ActiveSegment seg(2, 100);
+    vextor::ActiveSegment seg(2, 100);
 
-    vexdb::VectorId big_id = 1ULL << 40;
+    vextor::VectorId big_id = 1ULL << 40;
     seg.insert(big_id, std::vector<float>{1.0f, 0.0f}.data());
 
     auto results = seg.search(std::vector<float>{1.0f, 0.0f}.data(), 1);
@@ -59,7 +59,7 @@ TEST(ActiveSegment, LargeUserIdPreserved) {
 }
 
 TEST(ActiveSegment, CapacityAndIsFull) {
-    vexdb::ActiveSegment seg(2, 3);
+    vextor::ActiveSegment seg(2, 3);
 
     EXPECT_EQ(seg.capacity(), 3);
     EXPECT_FALSE(seg.is_full());
@@ -73,14 +73,14 @@ TEST(ActiveSegment, CapacityAndIsFull) {
 }
 
 TEST(ActiveSegment, InsertWhenFullThrows) {
-    vexdb::ActiveSegment seg(2, 1);
+    vextor::ActiveSegment seg(2, 1);
     seg.insert(1, std::vector<float>{0.0f, 0.0f}.data());
 
     EXPECT_THROW(seg.insert(2, std::vector<float>{1.0f, 0.0f}.data()), std::runtime_error);
 }
 
 TEST(ActiveSegment, DuplicateUserIdThrows) {
-    vexdb::ActiveSegment seg(2, 100);
+    vextor::ActiveSegment seg(2, 100);
     seg.insert(42, std::vector<float>{0.0f, 0.0f}.data());
 
     EXPECT_THROW(seg.insert(42, std::vector<float>{1.0f, 0.0f}.data()), std::invalid_argument);
@@ -94,9 +94,9 @@ TEST(ActiveSegment, DuplicateUserIdThrows) {
 
 TEST(ActiveSegment, RecallWithRandomVectors) {
     const int n = 1000;
-    const vexdb::Dim dim = 32;
+    const vextor::Dim dim = 32;
 
-    vexdb::ActiveSegment seg(dim, n);
+    vextor::ActiveSegment seg(dim, n);
 
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
@@ -105,7 +105,7 @@ TEST(ActiveSegment, RecallWithRandomVectors) {
     for (int i = 0; i < n; i++) {
         std::vector<float> v(dim);
         for (auto& x : v) x = dist(rng);
-        seg.insert(static_cast<vexdb::VectorId>(i), v.data());
+        seg.insert(static_cast<vextor::VectorId>(i), v.data());
         vecs.push_back(std::move(v));
     }
 

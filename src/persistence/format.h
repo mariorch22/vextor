@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace vexdb {
+namespace vextor {
 
 // VEX0 format for vectors.bin
 // Layout: [header 16 bytes] [float data...]
@@ -44,4 +44,4 @@ struct IdsHeader {
 };
 static_assert(sizeof(IdsHeader) == 12);
 
-}  // namespace vexdb
+}  // namespace vextor

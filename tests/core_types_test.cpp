@@ -10,28 +10,28 @@
 // --- Type size guarantees ---
 
 TEST(CoreTypes, TypeSizes) {
-    static_assert(sizeof(vexdb::VectorId) == 8);
-    static_assert(sizeof(vexdb::Offset) == 4);
-    static_assert(sizeof(vexdb::Dim) == 4);
+    static_assert(sizeof(vextor::VectorId) == 8);
+    static_assert(sizeof(vextor::Offset) == 4);
+    static_assert(sizeof(vextor::Dim) == 4);
 }
 
 // --- SearchResult ordering ---
 
 TEST(SearchResult, SmallerDistanceIsLess) {
-    vexdb::SearchResult a{.offset = 0, .distance = 1.0f};
-    vexdb::SearchResult b{.offset = 1, .distance = 2.0f};
+    vextor::SearchResult a{.offset = 0, .distance = 1.0f};
+    vextor::SearchResult b{.offset = 1, .distance = 2.0f};
     EXPECT_LT(a, b);
     EXPECT_GT(b, a);
 }
 
 TEST(SearchResult, EqualDistanceIsEqual) {
-    vexdb::SearchResult a{.offset = 0, .distance = 1.5f};
-    vexdb::SearchResult b{.offset = 0, .distance = 1.5f};
+    vextor::SearchResult a{.offset = 0, .distance = 1.5f};
+    vextor::SearchResult b{.offset = 0, .distance = 1.5f};
     EXPECT_EQ(a, b);
 }
 
 TEST(SearchResult, SortByDistance) {
-    std::vector<vexdb::SearchResult> results = {
+    std::vector<vextor::SearchResult> results = {
         {.offset = 0, .distance = 3.0f},
         {.offset = 1, .distance = 1.0f},
         {.offset = 2, .distance = 2.0f},
@@ -46,8 +46,8 @@ TEST(SearchResult, SortByDistance) {
 
 TEST(SearchResult, PriorityQueueClosestOnTop) {
     // std::greater makes it a min-heap: closest result on top
-    std::priority_queue<vexdb::SearchResult, std::vector<vexdb::SearchResult>,
-                        std::greater<vexdb::SearchResult>>
+    std::priority_queue<vextor::SearchResult, std::vector<vextor::SearchResult>,
+                        std::greater<vextor::SearchResult>>
         pq;
 
     pq.push({.offset = 0, .distance = 5.0f});
@@ -60,7 +60,7 @@ TEST(SearchResult, PriorityQueueClosestOnTop) {
 
 TEST(SearchResult, PriorityQueueMaxHeapFarthestOnTop) {
     // Default max-heap: farthest result on top (useful for HNSW candidate pruning)
-    std::priority_queue<vexdb::SearchResult> pq;
+    std::priority_queue<vextor::SearchResult> pq;
 
     pq.push({.offset = 0, .distance = 5.0f});
     pq.push({.offset = 1, .distance = 1.0f});
@@ -71,8 +71,8 @@ TEST(SearchResult, PriorityQueueMaxHeapFarthestOnTop) {
 }
 
 TEST(SearchResult, EqualDistanceDifferentOffsetIsNotEqual) {
-    vexdb::SearchResult a{.offset = 0, .distance = 1.5f};
-    vexdb::SearchResult b{.offset = 1, .distance = 1.5f};
+    vextor::SearchResult a{.offset = 0, .distance = 1.5f};
+    vextor::SearchResult b{.offset = 1, .distance = 1.5f};
     EXPECT_NE(a, b);      // different offset → not equal
     EXPECT_FALSE(a < b);  // same distance → neither is less
     EXPECT_FALSE(b < a);

@@ -10,7 +10,7 @@ static void BM_FlatIndexSearch_1K_128d(benchmark::State& state) {
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 
-    vexdb::InMemoryStore store(128);
+    vextor::InMemoryStore store(128);
     for (int i = 0; i < 1000; i++) {
         std::vector<float> v(128);
         for (auto& x : v) x = dist(rng);
@@ -20,7 +20,7 @@ static void BM_FlatIndexSearch_1K_128d(benchmark::State& state) {
     std::vector<float> query(128);
     for (auto& x : query) x = dist(rng);
 
-    vexdb::FlatIndex index(store);
+    vextor::FlatIndex index(store);
 
     for (auto _ : state) {
         benchmark::DoNotOptimize(index.search(query.data(), 10));
@@ -31,7 +31,7 @@ static void BM_FlatIndexSearch_10K_128d(benchmark::State& state) {
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 
-    vexdb::InMemoryStore store(128);
+    vextor::InMemoryStore store(128);
     for (int i = 0; i < 10000; i++) {
         std::vector<float> v(128);
         for (auto& x : v) x = dist(rng);
@@ -41,7 +41,7 @@ static void BM_FlatIndexSearch_10K_128d(benchmark::State& state) {
     std::vector<float> query(128);
     for (auto& x : query) x = dist(rng);
 
-    vexdb::FlatIndex index(store);
+    vextor::FlatIndex index(store);
 
     for (auto _ : state) {
         benchmark::DoNotOptimize(index.search(query.data(), 10));

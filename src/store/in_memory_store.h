@@ -6,7 +6,7 @@
 #include "core/types.h"
 #include "store/concept.h"
 
-namespace vexdb {
+namespace vextor {
 
 class InMemoryStore {
    public:
@@ -30,4 +30,4 @@ class InMemoryStore {
 
 static_assert(VectorStore<InMemoryStore>);
 
-}  // namespace vexdb
+}  // namespace vextor

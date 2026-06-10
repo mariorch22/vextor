@@ -9,7 +9,7 @@
 #include "segment/id_mapping.h"
 #include "store/in_memory_store.h"
 
-namespace vexdb {
+namespace vextor {
 
 class ActiveSegment {
    public:
@@ -41,4 +41,4 @@ class ActiveSegment {
     std::size_t capacity_;
 };
 
-}  // namespace vexdb
+}  // namespace vextor

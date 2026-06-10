@@ -1,4 +1,4 @@
-# vexdb
+# vextor
 
 A segmented vector database for Approximate Nearest Neighbor search, written in C++20. Uses AVX2 SIMD distance kernels, HNSW graph indexing, and memory-mapped storage.
 
@@ -25,7 +25,7 @@ See [docs/PRD.md](docs/PRD.md) for the full design rationale.
 
 ## Code style
 
-Code follows STL/snake_case naming convention: types in `PascalCase`, functions and variables in `snake_case`, namespace `vexdb` in lowercase.
+Code follows STL/snake_case naming convention: types in `PascalCase`, functions and variables in `snake_case`, namespace `vextor` in lowercase.
 
 ## Build
 
@@ -46,7 +46,7 @@ Run tests and benchmarks:
 
 ```bash
 ctest --test-dir build-release --output-on-failure
-./build-release/benchmarks/vexdb_bench
+./build-release/benchmarks/vextor_bench
 ```
 
 ### SIFT1M benchmark (optional)
@@ -55,9 +55,9 @@ Requires the SIFT1M dataset (~160 MB download).
 
 ```bash
 ./benchmarks/sift1m/download.sh
-cmake --preset release -DVEXDB_BUILD_SIFT1M=ON
+cmake --preset release -DVEXTOR_BUILD_SIFT1M=ON
 cmake --build build-release
-./build-release/benchmarks/sift1m/vexdb_sift1m
+./build-release/benchmarks/sift1m/vextor_sift1m
 ```
 
 Results are written to `benchmarks/sift1m/results.md`.
@@ -70,7 +70,7 @@ Via pip (builds a wheel using scikit-build-core):
 
 ```bash
 pip install .
-python3 -c "import vexdb; print('ok')"
+python3 -c "import vextor; print('ok')"
 ```
 
 On CPython ≥ 3.12 this produces an abi3 wheel that works across Python versions. Note: the wheel is built with the host compiler's AVX2 support — a wheel built on an AVX2 machine requires AVX2 at runtime.
@@ -80,7 +80,7 @@ Alternatively, as part of a CMake build:
 ```bash
 cmake --preset release-python
 cmake --build build-release-python
-PYTHONPATH=build-release-python/python python3 -c "import vexdb; print('ok')"
+PYTHONPATH=build-release-python/python python3 -c "import vextor; print('ok')"
 ```
 
 ## Usage
@@ -89,10 +89,10 @@ PYTHONPATH=build-release-python/python python3 -c "import vexdb; print('ok')"
 
 ```cpp
 #include <vector>
-#include <vexdb/vexdb.h>
+#include <vextor/vextor.h>
 
 // In-memory only
-vexdb::Database db(/*dim=*/768, /*segment_capacity=*/1000000);
+vextor::Database db(/*dim=*/768, /*segment_capacity=*/1000000);
 
 // Insert
 std::vector<float> vec(768, 0.0f);
@@ -106,19 +106,19 @@ for (const auto& r : results) {
 }
 
 // With persistence
-vexdb::Database db2(768, 1000000, "path/to/db");
+vextor::Database db2(768, 1000000, "path/to/db");
 db2.insert(42, vec);
 db2.save();
-auto loaded = vexdb::Database::load("path/to/db");
+auto loaded = vextor::Database::load("path/to/db");
 ```
 
 ### Python
 
 ```python
 import numpy as np
-import vexdb
+import vextor
 
-db = vexdb.Database(dimensions=768, segment_capacity=1_000_000, path="path/to/db")
+db = vextor.Database(dimensions=768, segment_capacity=1_000_000, path="path/to/db")
 
 db.insert(user_id=42, vector=np.random.randn(768).astype(np.float32))
 
@@ -127,7 +127,7 @@ for user_id, distance in results:
     print(f"  {user_id}: {distance:.4f}")
 
 db.save()
-db2 = vexdb.Database.load("path/to/db")
+db2 = vextor.Database.load("path/to/db")
 ```
 
 ## Benchmarks

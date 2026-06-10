@@ -1,8 +1,8 @@
-# vexdb — Product Requirements Document
+# vextor — Product Requirements Document
 
 ## Overview
 
-vexdb is a segmented vector database for Approximate Nearest Neighbor (ANN) search, written in C++20 with AVX2 SIMD distance kernels.
+vextor is a segmented vector database for Approximate Nearest Neighbor (ANN) search, written in C++20 with AVX2 SIMD distance kernels.
 
 Vectors are written to an active in-memory segment. When it fills up, it gets sealed to disk and becomes immutable. Sealed segments can be loaded back via mmap (zero-copy) or into RAM. Search fans out across all segments and merges results.
 
@@ -66,11 +66,11 @@ Secondary audience: developers who want an embeddable vector search library for 
 ### C++
 
 ```cpp
-#include <vexdb/vexdb.h>
+#include <vextor/vextor.h>
 
 // Create a database. The path is optional — without it, the database
 // is in-memory only and save() is unavailable.
-vexdb::Database db(dimensions, segment_capacity, "path/to/db");
+vextor::Database db(dimensions, segment_capacity, "path/to/db");
 
 // Insert vectors (std::span<const float>; batch insert is Python-only for now)
 db.insert(user_id, vector_data);
@@ -81,15 +81,15 @@ auto results = db.search(query_vector, k);
 
 // Persistence — writes to the path given at construction
 db.save();
-auto db2 = vexdb::Database::load("path/to/db");
+auto db2 = vextor::Database::load("path/to/db");
 ```
 
 ### Python
 
 ```python
-import vexdb
+import vextor
 
-db = vexdb.Database(dimensions=768, segment_capacity=1_000_000, path="path/to/db")
+db = vextor.Database(dimensions=768, segment_capacity=1_000_000, path="path/to/db")
 
 db.insert(user_id=42, vector=embedding)            # 1D float32 ndarray
 db.insert_batch(user_ids=ids, vectors=embeddings)  # uint64 ndarray + 2D float32 ndarray
@@ -98,7 +98,7 @@ results = db.search(query=query_embedding, k=10)
 # [(user_id, distance), ...]
 
 db.save()  # writes to the path given at construction
-db = vexdb.Database.load("path/to/db")
+db = vextor.Database.load("path/to/db")
 ```
 
 ## Performance budgets

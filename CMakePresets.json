@@ -13,11 +13,11 @@
             "binaryDir": "${sourceDir}/build-dev",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "VEXDB_BUILD_TESTS": "ON",
-                "VEXDB_BUILD_BENCHMARKS": "ON",
-                "VEXDB_ENABLE_ASAN": "ON",
-                "VEXDB_ENABLE_UBSAN": "ON",
-                "VEXDB_BUILD_PYTHON": "OFF"
+                "VEXTOR_BUILD_TESTS": "ON",
+                "VEXTOR_BUILD_BENCHMARKS": "ON",
+                "VEXTOR_ENABLE_ASAN": "ON",
+                "VEXTOR_ENABLE_UBSAN": "ON",
+                "VEXTOR_BUILD_PYTHON": "OFF"
             }
         },
         {
@@ -27,11 +27,11 @@
             "binaryDir": "${sourceDir}/build-release",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "VEXDB_BUILD_TESTS": "ON",
-                "VEXDB_BUILD_BENCHMARKS": "ON",
-                "VEXDB_ENABLE_ASAN": "OFF",
-                "VEXDB_ENABLE_UBSAN": "OFF",
-                "VEXDB_BUILD_PYTHON": "OFF"
+                "VEXTOR_BUILD_TESTS": "ON",
+                "VEXTOR_BUILD_BENCHMARKS": "ON",
+                "VEXTOR_ENABLE_ASAN": "OFF",
+                "VEXTOR_ENABLE_UBSAN": "OFF",
+                "VEXTOR_BUILD_PYTHON": "OFF"
             }
         },
         {
@@ -41,11 +41,11 @@
             "binaryDir": "${sourceDir}/build-release-python",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "VEXDB_BUILD_TESTS": "ON",
-                "VEXDB_BUILD_BENCHMARKS": "ON",
-                "VEXDB_ENABLE_ASAN": "OFF",
-                "VEXDB_ENABLE_UBSAN": "OFF",
-                "VEXDB_BUILD_PYTHON": "ON"
+                "VEXTOR_BUILD_TESTS": "ON",
+                "VEXTOR_BUILD_BENCHMARKS": "ON",
+                "VEXTOR_ENABLE_ASAN": "OFF",
+                "VEXTOR_ENABLE_UBSAN": "OFF",
+                "VEXTOR_BUILD_PYTHON": "ON"
             }
         }
     ]

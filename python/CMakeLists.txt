@@ -26,11 +26,11 @@ endif()
 
 # STABLE_ABI builds an abi3 module against CPython >= 3.12 and is ignored
 # on older interpreters (regular version-specific module).
-nanobind_add_module(vexdb_python STABLE_ABI
+nanobind_add_module(vextor_python STABLE_ABI
     bindings.cpp
 )
-target_link_libraries(vexdb_python PRIVATE vexdb)
-set_target_properties(vexdb_python PROPERTIES OUTPUT_NAME "vexdb")
+target_link_libraries(vextor_python PRIVATE vextor)
+set_target_properties(vextor_python PROPERTIES OUTPUT_NAME "vextor")
 
 # nanobind uses non-standard extensions that trigger -Wpedantic; suppress on
 # third-party targets. The nanobind library target is created lazily by
@@ -40,9 +40,9 @@ foreach(nb_target nanobind-static nanobind-static-abi3)
         target_compile_options(${nb_target} PRIVATE -w)
     endif()
 endforeach()
-target_compile_options(vexdb_python PRIVATE -Wno-nested-anon-types -Wno-zero-length-array)
+target_compile_options(vextor_python PRIVATE -Wno-nested-anon-types -Wno-zero-length-array)
 
 # Wheel layout: scikit-build-core packages whatever install() produces.
 if(SKBUILD)
-    install(TARGETS vexdb_python LIBRARY DESTINATION .)
+    install(TARGETS vextor_python LIBRARY DESTINATION .)
 endif()

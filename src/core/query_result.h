@@ -2,11 +2,11 @@
 
 #include "core/types.h"
 
-namespace vexdb {
+namespace vextor {
 
 struct QueryResult {
     VectorId user_id;
     float distance;
 };
 
-}  // namespace vexdb
+}  // namespace vextor

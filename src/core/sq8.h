@@ -6,7 +6,7 @@
 
 #include "core/types.h"
 
-namespace vexdb {
+namespace vextor {
 
 struct SQ8Params {
     std::vector<float> min;    // per-dimension minimum
@@ -31,4 +31,4 @@ float sq8_asymmetric_l2(const float* query, const uint8_t* encoded, const SQ8Par
 // Scalar-only version (always available, used as ground truth in tests).
 float sq8_asymmetric_l2_scalar(const float* query, const uint8_t* encoded, const SQ8Params& params);
 
-}  // namespace vexdb
+}  // namespace vextor

@@ -11,7 +11,7 @@
 #include "segment/active_segment.h"
 #include "segment/sealed_segment.h"
 
-namespace vexdb {
+namespace vextor {
 
 class SegmentManager {
    public:
@@ -47,4 +47,4 @@ class SegmentManager {
     void write_segments_json(std::size_t total) const;
 };
 
-}  // namespace vexdb
+}  // namespace vextor

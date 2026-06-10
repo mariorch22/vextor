@@ -9,7 +9,7 @@
 namespace {
 
 std::string make_temp_dir(const std::string& name) {
-    auto path = std::filesystem::temp_directory_path() / ("vexdb_" + name);
+    auto path = std::filesystem::temp_directory_path() / ("vextor_" + name);
     std::filesystem::remove_all(path);
     return path.string();
 }
@@ -17,7 +17,7 @@ std::string make_temp_dir(const std::string& name) {
 }  // namespace
 
 TEST(SegmentManager, InsertAndSearch) {
-    vexdb::SegmentManager mgr(4, 100);
+    vextor::SegmentManager mgr(4, 100);
 
     mgr.insert(1, std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f});
     mgr.insert(2, std::vector<float>{0.0f, 1.0f, 0.0f, 0.0f});
@@ -31,7 +31,7 @@ TEST(SegmentManager, InsertAndSearch) {
 }
 
 TEST(SegmentManager, SealOnCapacity) {
-    vexdb::SegmentManager mgr(2, 3);
+    vextor::SegmentManager mgr(2, 3);
 
     mgr.insert(1, std::vector<float>{0.0f, 0.0f});
     mgr.insert(2, std::vector<float>{1.0f, 0.0f});
@@ -44,7 +44,7 @@ TEST(SegmentManager, SealOnCapacity) {
 }
 
 TEST(SegmentManager, SearchAcrossSegments) {
-    vexdb::SegmentManager mgr(2, 3);
+    vextor::SegmentManager mgr(2, 3);
 
     mgr.insert(10, std::vector<float>{0.0f, 0.0f});
     mgr.insert(20, std::vector<float>{1.0f, 0.0f});
@@ -69,7 +69,7 @@ TEST(SegmentManager, SaveAndLoadRoundTrip) {
     auto dir = make_temp_dir("mgr_roundtrip");
 
     {
-        vexdb::SegmentManager mgr(8, 50, dir);
+        vextor::SegmentManager mgr(8, 50, dir);
 
         std::mt19937 rng(42);
         std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
@@ -77,13 +77,13 @@ TEST(SegmentManager, SaveAndLoadRoundTrip) {
         for (int i = 0; i < 30; i++) {
             std::vector<float> v(8);
             for (auto& x : v) x = dist(rng);
-            mgr.insert(static_cast<vexdb::VectorId>(i), v);
+            mgr.insert(static_cast<vextor::VectorId>(i), v);
         }
 
         mgr.save();
     }
 
-    auto mgr = vexdb::SegmentManager::load(dir);
+    auto mgr = vextor::SegmentManager::load(dir);
     EXPECT_EQ(mgr.total_vectors(), 30);
     EXPECT_EQ(mgr.dimensions(), 8);
 
@@ -106,11 +106,11 @@ TEST(SegmentManager, SaveAndLoadWithSealedSegments) {
     auto dir = make_temp_dir("mgr_sealed_roundtrip");
 
     {
-        vexdb::SegmentManager mgr(4, 5, dir);
+        vextor::SegmentManager mgr(4, 5, dir);
 
         for (int i = 0; i < 12; i++) {
             std::vector<float> v = {static_cast<float>(i), 0.0f, 0.0f, 0.0f};
-            mgr.insert(static_cast<vexdb::VectorId>(i), v);
+            mgr.insert(static_cast<vextor::VectorId>(i), v);
         }
 
         // Should have sealed twice: 5 + 5 sealed, 2 active.
@@ -118,7 +118,7 @@ TEST(SegmentManager, SaveAndLoadWithSealedSegments) {
         mgr.save();
     }
 
-    auto mgr = vexdb::SegmentManager::load(dir);
+    auto mgr = vextor::SegmentManager::load(dir);
     // 2 sealed (from seal_active) + active serialized = 3 segments loaded as sealed.
     EXPECT_EQ(mgr.total_vectors(), 12);
 
@@ -130,7 +130,7 @@ TEST(SegmentManager, SaveAndLoadWithSealedSegments) {
 }
 
 TEST(SegmentManager, DuplicateIdAcrossSegmentsThrows) {
-    vexdb::SegmentManager mgr(2, 3);
+    vextor::SegmentManager mgr(2, 3);
 
     mgr.insert(42, std::vector<float>{0.0f, 0.0f});
     mgr.insert(43, std::vector<float>{1.0f, 0.0f});
@@ -146,9 +146,9 @@ TEST(SegmentManager, DuplicateIdAcrossSegmentsThrows) {
 
 TEST(SegmentManager, RecallAcrossSegments) {
     const int n = 300;
-    const vexdb::Dim dim = 32;
+    const vextor::Dim dim = 32;
 
-    vexdb::SegmentManager mgr(dim, 100);
+    vextor::SegmentManager mgr(dim, 100);
 
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
@@ -156,7 +156,7 @@ TEST(SegmentManager, RecallAcrossSegments) {
     for (int i = 0; i < n; i++) {
         std::vector<float> v(dim);
         for (auto& x : v) x = dist(rng);
-        mgr.insert(static_cast<vexdb::VectorId>(i), v);
+        mgr.insert(static_cast<vextor::VectorId>(i), v);
     }
 
     EXPECT_GE(mgr.segment_count(), 3);
@@ -176,19 +176,19 @@ TEST(SegmentManager, DuplicateIdAfterLoadThrows) {
     auto dir = make_temp_dir("mgr_dup_after_load");
 
     {
-        vexdb::SegmentManager mgr(2, 10, dir);
+        vextor::SegmentManager mgr(2, 10, dir);
         mgr.insert(42, std::vector<float>{1.0f, 0.0f});
         mgr.save();
     }
 
-    auto mgr = vexdb::SegmentManager::load(dir);
+    auto mgr = vextor::SegmentManager::load(dir);
     EXPECT_THROW(mgr.insert(42, std::vector<float>{2.0f, 0.0f}), std::invalid_argument);
 
     std::filesystem::remove_all(dir);
 }
 
 TEST(SegmentManager, InsertWrongDimensionThrows) {
-    vexdb::SegmentManager mgr(4, 100);
+    vextor::SegmentManager mgr(4, 100);
 
     EXPECT_THROW(mgr.insert(1, std::vector<float>{1.0f, 0.0f}), std::invalid_argument);
     EXPECT_THROW(mgr.insert(1, std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f, 0.0f}),
@@ -197,7 +197,7 @@ TEST(SegmentManager, InsertWrongDimensionThrows) {
 }
 
 TEST(SegmentManager, SearchWrongDimensionThrows) {
-    vexdb::SegmentManager mgr(4, 100);
+    vextor::SegmentManager mgr(4, 100);
     mgr.insert(1, std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f});
 
     EXPECT_THROW((void)mgr.search(std::vector<float>{1.0f, 0.0f}, 1), std::invalid_argument);

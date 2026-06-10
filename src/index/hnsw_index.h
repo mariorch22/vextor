@@ -19,7 +19,7 @@
 #include "core/types.h"
 #include "store/concept.h"
 
-namespace vexdb {
+namespace vextor {
 
 // HNSW graph data: layer assignments and adjacency lists.
 struct HnswGraph {
@@ -384,4 +384,4 @@ class HnswIndex {
     void mark_visited(Offset id) const { visited_gen_[id] = current_gen_; }
 };
 
-}  // namespace vexdb
+}  // namespace vextor

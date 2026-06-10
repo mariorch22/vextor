@@ -7,7 +7,7 @@
 
 #include "core/types.h"
 
-namespace vexdb {
+namespace vextor {
 
 class IdMapping {
    public:
@@ -24,4 +24,4 @@ class IdMapping {
     std::unordered_map<VectorId, Offset> id_to_offset_;
 };
 
-}  // namespace vexdb
+}  // namespace vextor

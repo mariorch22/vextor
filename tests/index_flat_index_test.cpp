@@ -9,19 +9,19 @@
 #include "store/in_memory_store.h"
 
 TEST(FlatIndex, EmptyStoreReturnsEmpty) {
-    vexdb::InMemoryStore store(3);
-    vexdb::FlatIndex index(store);
+    vextor::InMemoryStore store(3);
+    vextor::FlatIndex index(store);
 
     auto results = index.search(std::vector<float>{1.0f, 2.0f, 3.0f}.data(), 5);
     EXPECT_TRUE(results.empty());
 }
 
 TEST(FlatIndex, SingleVector) {
-    vexdb::InMemoryStore store(3);
+    vextor::InMemoryStore store(3);
     std::vector<float> vec = {1.0f, 0.0f, 0.0f};
     store.add_vector(vec.data());
 
-    vexdb::FlatIndex index(store);
+    vextor::FlatIndex index(store);
     std::vector<float> query = {0.0f, 0.0f, 0.0f};
     auto results = index.search(query.data(), 1);
 
@@ -31,13 +31,13 @@ TEST(FlatIndex, SingleVector) {
 }
 
 TEST(FlatIndex, HandComputedDistances) {
-    vexdb::InMemoryStore store(2);
+    vextor::InMemoryStore store(2);
     // v0 at (0,0), v1 at (3,4), v2 at (1,0)
     store.add_vector(std::vector<float>{0.0f, 0.0f}.data());
     store.add_vector(std::vector<float>{3.0f, 4.0f}.data());
     store.add_vector(std::vector<float>{1.0f, 0.0f}.data());
 
-    vexdb::FlatIndex index(store);
+    vextor::FlatIndex index(store);
     std::vector<float> query = {0.0f, 0.0f};
 
     auto results = index.search(query.data(), 3);
@@ -53,14 +53,14 @@ TEST(FlatIndex, HandComputedDistances) {
 }
 
 TEST(FlatIndex, TopKSmallerThanStore) {
-    vexdb::InMemoryStore store(2);
+    vextor::InMemoryStore store(2);
     store.add_vector(std::vector<float>{0.0f, 0.0f}.data());
     store.add_vector(std::vector<float>{1.0f, 0.0f}.data());
     store.add_vector(std::vector<float>{2.0f, 0.0f}.data());
     store.add_vector(std::vector<float>{3.0f, 0.0f}.data());
     store.add_vector(std::vector<float>{4.0f, 0.0f}.data());
 
-    vexdb::FlatIndex index(store);
+    vextor::FlatIndex index(store);
     std::vector<float> query = {0.0f, 0.0f};
 
     auto results = index.search(query.data(), 3);
@@ -72,11 +72,11 @@ TEST(FlatIndex, TopKSmallerThanStore) {
 }
 
 TEST(FlatIndex, KLargerThanStore) {
-    vexdb::InMemoryStore store(2);
+    vextor::InMemoryStore store(2);
     store.add_vector(std::vector<float>{1.0f, 0.0f}.data());
     store.add_vector(std::vector<float>{2.0f, 0.0f}.data());
 
-    vexdb::FlatIndex index(store);
+    vextor::FlatIndex index(store);
     std::vector<float> query = {0.0f, 0.0f};
 
     auto results = index.search(query.data(), 10);
@@ -89,10 +89,10 @@ TEST(FlatIndex, ResultsMatchDirectComputation) {
     // Random vectors, verify FlatIndex matches manual distance computation.
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
-    vexdb::Dim dim = 64;
+    vextor::Dim dim = 64;
     int n = 200;
 
-    vexdb::InMemoryStore store(dim);
+    vextor::InMemoryStore store(dim);
     std::vector<std::vector<float>> vecs;
     for (int i = 0; i < n; i++) {
         std::vector<float> v(dim);
@@ -104,7 +104,7 @@ TEST(FlatIndex, ResultsMatchDirectComputation) {
     std::vector<float> query(dim);
     for (auto& x : query) x = dist(rng);
 
-    vexdb::FlatIndex index(store);
+    vextor::FlatIndex index(store);
     auto results = index.search(query.data(), 10);
 
     ASSERT_EQ(results.size(), 10);
@@ -116,7 +116,7 @@ TEST(FlatIndex, ResultsMatchDirectComputation) {
 
     // Verify distances match direct computation.
     for (const auto& r : results) {
-        float expected = vexdb::l2_distance(query.data(), vecs[r.offset].data(), dim);
+        float expected = vextor::l2_distance(query.data(), vecs[r.offset].data(), dim);
         EXPECT_FLOAT_EQ(r.distance, expected);
     }
 
@@ -124,10 +124,10 @@ TEST(FlatIndex, ResultsMatchDirectComputation) {
     // than the worst returned result.
     float worst_returned = results.back().distance;
     for (int i = 0; i < n; i++) {
-        float d = vexdb::l2_distance(query.data(), vecs[i].data(), dim);
+        float d = vextor::l2_distance(query.data(), vecs[i].data(), dim);
         bool in_results = false;
         for (const auto& r : results) {
-            if (r.offset == static_cast<vexdb::Offset>(i)) {
+            if (r.offset == static_cast<vextor::Offset>(i)) {
                 in_results = true;
                 break;
             }

@@ -12,11 +12,11 @@
 
 // --- Helper: build a store with random vectors ---
 
-static vexdb::InMemoryStore make_random_store(int n, vexdb::Dim dim, int seed = 42) {
+static vextor::InMemoryStore make_random_store(int n, vextor::Dim dim, int seed = 42) {
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 
-    vexdb::InMemoryStore store(dim);
+    vextor::InMemoryStore store(dim);
     for (int i = 0; i < n; i++) {
         std::vector<float> vec(dim);
         for (auto& x : vec) x = dist(rng);
@@ -28,11 +28,11 @@ static vexdb::InMemoryStore make_random_store(int n, vexdb::Dim dim, int seed = 
 // --- Basic functionality ---
 
 TEST(HnswIndex, InsertSingleVector) {
-    vexdb::InMemoryStore store(4);
+    vextor::InMemoryStore store(4);
     std::vector<float> vec = {1.0f, 2.0f, 3.0f, 4.0f};
     store.add_vector(vec.data());
 
-    vexdb::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store, 16);
     index.insert();
 
     EXPECT_EQ(index.graph().size(), 1);
@@ -42,9 +42,9 @@ TEST(HnswIndex, InsertSingleVector) {
 
 TEST(HnswIndex, InsertMultipleVectors) {
     auto store = make_random_store(100, 32);
-    vexdb::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store, 16);
 
-    for (vexdb::Offset i = 0; i < 100; i++) {
+    for (vextor::Offset i = 0; i < 100; i++) {
         index.insert();
     }
 
@@ -52,26 +52,26 @@ TEST(HnswIndex, InsertMultipleVectors) {
 }
 
 TEST(HnswIndex, InsertWithoutAvailableVectorThrows) {
-    vexdb::InMemoryStore store(4);
-    vexdb::HnswIndex index(store, 16);
+    vextor::InMemoryStore store(4);
+    vextor::HnswIndex index(store, 16);
 
     EXPECT_THROW(index.insert(), std::out_of_range);
 }
 
 TEST(HnswIndex, InsertPastStoreSizeThrows) {
-    vexdb::InMemoryStore store(4);
+    vextor::InMemoryStore store(4);
     std::vector<float> vec = {1.0f, 2.0f, 3.0f, 4.0f};
     store.add_vector(vec.data());
 
-    vexdb::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store, 16);
     index.insert();
 
     EXPECT_THROW(index.insert(), std::out_of_range);
 }
 
 TEST(HnswIndex, SearchEmptyIndex) {
-    vexdb::InMemoryStore store(4);
-    vexdb::HnswIndex index(store, 16);
+    vextor::InMemoryStore store(4);
+    vextor::HnswIndex index(store, 16);
 
     std::vector<float> query = {1.0f, 2.0f, 3.0f, 4.0f};
     auto results = index.search(query.data(), 10);
@@ -79,11 +79,11 @@ TEST(HnswIndex, SearchEmptyIndex) {
 }
 
 TEST(HnswIndex, SearchSingleVector) {
-    vexdb::InMemoryStore store(3);
+    vextor::InMemoryStore store(3);
     std::vector<float> vec = {1.0f, 0.0f, 0.0f};
     store.add_vector(vec.data());
 
-    vexdb::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store, 16);
     index.insert();
 
     std::vector<float> query = {0.0f, 0.0f, 0.0f};
@@ -96,7 +96,7 @@ TEST(HnswIndex, SearchSingleVector) {
 
 TEST(HnswIndex, SearchKZeroReturnsEmpty) {
     auto store = make_random_store(10, 8);
-    vexdb::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store, 16);
     for (int i = 0; i < 10; i++) index.insert();
 
     std::vector<float> query(8, 0.0f);
@@ -106,7 +106,7 @@ TEST(HnswIndex, SearchKZeroReturnsEmpty) {
 
 TEST(HnswIndex, ResultsSortedByDistance) {
     auto store = make_random_store(500, 32);
-    vexdb::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store, 16);
     for (int i = 0; i < 500; i++) index.insert();
 
     std::vector<float> query(32, 0.0f);
@@ -121,17 +121,17 @@ TEST(HnswIndex, ResultsSortedByDistance) {
 
 TEST(HnswIndex, BidirectionalEdges) {
     auto store = make_random_store(500, 32);
-    vexdb::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store, 16);
     for (int i = 0; i < 500; i++) index.insert();
 
     const auto& g = index.graph();
     int stride = g.layer0_stride();
 
-    for (vexdb::Offset node = 0; node < static_cast<vexdb::Offset>(g.size()); node++) {
+    for (vextor::Offset node = 0; node < static_cast<vextor::Offset>(g.size()); node++) {
         // Check layer 0.
         int count = g.layer0_count[node];
         for (int j = 0; j < count; j++) {
-            vexdb::Offset nb = g.layer0[node * stride + j];
+            vextor::Offset nb = g.layer0[node * stride + j];
             // nb should have node as a neighbor too.
             bool found = false;
             int nb_count = g.layer0_count[nb];
@@ -147,7 +147,7 @@ TEST(HnswIndex, BidirectionalEdges) {
 
         // Check upper layers.
         for (int layer = 1; layer <= g.levels[node]; layer++) {
-            for (vexdb::Offset nb : g.upper[node][layer - 1]) {
+            for (vextor::Offset nb : g.upper[node][layer - 1]) {
                 ASSERT_GT(g.levels[nb], layer - 1)
                     << "Node " << nb << " doesn't exist at layer " << layer;
                 bool found = std::find(g.upper[nb][layer - 1].begin(), g.upper[nb][layer - 1].end(),
@@ -161,13 +161,13 @@ TEST(HnswIndex, BidirectionalEdges) {
 
 TEST(HnswIndex, MaxNeighborConstraint) {
     auto store = make_random_store(500, 32);
-    vexdb::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store, 16);
     for (int i = 0; i < 500; i++) index.insert();
 
     const auto& g = index.graph();
     int m0 = 2 * g.m;
 
-    for (vexdb::Offset node = 0; node < static_cast<vexdb::Offset>(g.size()); node++) {
+    for (vextor::Offset node = 0; node < static_cast<vextor::Offset>(g.size()); node++) {
         // Layer 0: max 2M neighbors.
         EXPECT_LE(g.layer0_count[node], m0) << "Node " << node << " has " << g.layer0_count[node]
                                             << " neighbors at layer 0 (max " << m0 << ")";
@@ -183,7 +183,7 @@ TEST(HnswIndex, MaxNeighborConstraint) {
 
 TEST(HnswIndex, LayerDistribution) {
     auto store = make_random_store(10000, 32);
-    vexdb::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store, 16);
     for (int i = 0; i < 10000; i++) index.insert();
 
     const auto& g = index.graph();
@@ -215,18 +215,18 @@ TEST(HnswIndex, LayerDistribution) {
 
 TEST(HnswIndex, RecallAt10Above85Percent) {
     const int n = 10000;
-    const vexdb::Dim dim = 128;
+    const vextor::Dim dim = 128;
     const int k = 10;
     const int num_queries = 100;
 
     auto store = make_random_store(n, dim, 42);
 
     // Build HNSW index.
-    vexdb::HnswIndex hnsw(store, 16, 200);
+    vextor::HnswIndex hnsw(store, 16, 200);
     for (int i = 0; i < n; i++) hnsw.insert();
 
     // Build flat index as ground truth.
-    vexdb::FlatIndex flat(store);
+    vextor::FlatIndex flat(store);
 
     // Generate queries.
     std::mt19937 rng(123);
@@ -241,7 +241,7 @@ TEST(HnswIndex, RecallAt10Above85Percent) {
         auto flat_results = flat.search(query.data(), k);
 
         // Count how many of HNSW's top-k are in the true top-k.
-        std::set<vexdb::Offset> true_set;
+        std::set<vextor::Offset> true_set;
         for (const auto& r : flat_results) true_set.insert(r.offset);
 
         for (const auto& r : hnsw_results) {

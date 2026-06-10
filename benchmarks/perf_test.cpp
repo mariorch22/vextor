@@ -14,7 +14,7 @@ int main() {
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 
-    vexdb::SegmentManager db(dim, n);
+    vextor::SegmentManager db(dim, n);
 
     // bulk insert
     std::vector<float> vec(dim);
