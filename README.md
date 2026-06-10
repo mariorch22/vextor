@@ -78,10 +78,10 @@ PYTHONPATH=build-release-python/python python3 -c "import vexdb; print('ok')"
 
 ```cpp
 #include <vector>
-#include "segment/segment_manager.h"
+#include <vexdb/vexdb.h>
 
 // In-memory only
-vexdb::SegmentManager db(/*dim=*/768, /*segment_capacity=*/1000000);
+vexdb::Database db(/*dim=*/768, /*segment_capacity=*/1000000);
 
 // Insert
 std::vector<float> vec(768, 0.0f);
@@ -95,10 +95,10 @@ for (const auto& r : results) {
 }
 
 // With persistence
-vexdb::SegmentManager db2(768, 1000000, "path/to/db");
+vexdb::Database db2(768, 1000000, "path/to/db");
 db2.insert(42, vec);
 db2.save();
-auto loaded = vexdb::SegmentManager::load("path/to/db");
+auto loaded = vexdb::Database::load("path/to/db");
 ```
 
 ### Python
