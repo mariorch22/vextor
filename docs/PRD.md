@@ -68,19 +68,19 @@ Secondary audience: developers who want an embeddable vector search library for 
 ```cpp
 #include <vexdb/vexdb.h>
 
-// Create or open a database
-vexdb::Database db(dimensions, segment_capacity);
+// Create a database. The path is optional — without it, the database
+// is in-memory only and save() is unavailable.
+vexdb::Database db(dimensions, segment_capacity, "path/to/db");
 
-// Insert vectors
+// Insert vectors (std::span<const float>; batch insert is Python-only for now)
 db.insert(user_id, vector_data);
-db.insert_batch(user_ids, vector_data, count);
 
 // Search
 auto results = db.search(query_vector, k);
-// results: std::vector<SearchResult> → {user_id, distance}
+// results: std::vector<QueryResult> → {user_id, distance}
 
-// Persistence
-db.save("path/to/db");
+// Persistence — writes to the path given at construction
+db.save();
 auto db2 = vexdb::Database::load("path/to/db");
 ```
 
@@ -89,29 +89,31 @@ auto db2 = vexdb::Database::load("path/to/db");
 ```python
 import vexdb
 
-db = vexdb.Database(dimensions=768, segment_capacity=1_000_000)
+db = vexdb.Database(dimensions=768, segment_capacity=1_000_000, path="path/to/db")
 
-db.insert(user_id=42, vector=embedding)
-db.insert_batch(user_ids=[42, 43, 44], vectors=embeddings)
+db.insert(user_id=42, vector=embedding)            # 1D float32 ndarray
+db.insert_batch(user_ids=ids, vectors=embeddings)  # uint64 ndarray + 2D float32 ndarray
 
 results = db.search(query=query_embedding, k=10)
 # [(user_id, distance), ...]
 
-db.save("path/to/db")
+db.save()  # writes to the path given at construction
 db = vexdb.Database.load("path/to/db")
 ```
 
 ## Performance budgets
 
-All benchmarks on SIFT1M (1M vectors, 128 dimensions), single-threaded unless noted, measured on a consumer desktop CPU.
+All benchmarks on SIFT1M (1M vectors, 128 dimensions), single-threaded unless noted, measured on a consumer desktop CPU. Measured values: i7-1260P (WSL2), M=16, ef_construction=200, ef_search=128 — see README for the full sweep.
 
-| Metric | v0.1 target | v0.2 target |
-|---|---|---|
-| Recall@10 | > 90% | > 95% |
-| Search latency (single query) | < 5 ms | < 2 ms |
-| Search throughput (batch, parallel) | — | > 1000 QPS |
-| Insert throughput | > 5K vec/s | > 10K vec/s |
-| Memory per vector (128d, float32) | ~700 bytes | ~200 bytes (PQ) |
+| Metric | v0.1 target | v0.1.0 measured | v0.2 target |
+|---|---|---|---|
+| Recall@10 | > 90% | 99.4% | > 95% (with PQ) |
+| Search latency (single query) | < 5 ms | ~0.36 ms | < 2 ms |
+| Search throughput (batch, parallel) | — | 2810 QPS (single-threaded) | > 1000 QPS |
+| Insert throughput | > 5K vec/s | ~1.7K vec/s | > 10K vec/s |
+| Memory per vector (128d, float32) | ~700 bytes | — | ~200 bytes (PQ) |
+
+Insert throughput misses the v0.1 target: the 5K vec/s budget was set before tuning, and the shipped configuration spends its budget on recall instead (ef_construction=200 yields 99.4% Recall@10 against a 90% gate). Closing the gap is explicit v0.2 work (bulk persistence I/O, HNSW insert hot-path). Conversely, single-threaded search throughput already exceeds the v0.2 parallel target — that target will be revised upward once parallel search lands.
 
 Memory breakdown (128d, M=16): HNSW graph ~160 bytes + ID mapping 8 bytes is fixed overhead per vector regardless of quantization. Vector payload: float32 = 512 bytes, PQ-16 = 16 bytes.
 
@@ -135,7 +137,7 @@ v0.1 is single-threaded. No concurrent inserts, no concurrent insert + search. T
 
 v0.2 introduces parallel search across sealed segments. The guarantees:
 
-- **SealedSegments are immutable and lock-free.** Multiple threads can search them concurrently with zero synchronization. This is the main payoff of the Active/Sealed split.
+- **SealedSegments are immutable and lock-free.** Multiple threads can search them concurrently with zero synchronization. This is the main payoff of the Active/Sealed split. Caveat: the current `HnswIndex::search` keeps shared mutable scratch state (generation-based visited tracking), so this guarantee requires per-thread search scratch first — tracked in [#51](https://github.com/mariorch22/vexdb/issues/51) as a prerequisite for parallel search.
 - **ActiveSegment requires a read-write lock.** Concurrent searches are allowed (shared lock), inserts take an exclusive lock. Insert + search on the active segment are serialized against each other but not against sealed segment searches.
 - **Seal is a stop-the-world operation.** During seal, the active segment is exclusively locked — inserts and searches on it block until the new ActiveSegment is ready. Searches on sealed segments are unaffected.
 
@@ -143,14 +145,14 @@ v0.2 introduces parallel search across sealed segments. The guarantees:
 
 No write-ahead log. The design accepts data loss of the current ActiveSegment on crash — only sealed and persisted segments survive. This is an explicit tradeoff: WAL complexity is not justified for a batch-insert workload where the source data (embeddings from a model) is reproducible.
 
-Persistence is atomic at the segment level: seal() writes all three files (vectors.bin, hnsw.bin, ids.bin) and updates segments.json last. If a crash interrupts seal(), the incomplete segment directory is detected on load (missing or truncated files) and discarded. No partial state is loaded.
+Persistence is atomic at the segment level: seal() writes the three segment files (vectors.bin, hnsw.bin, ids.bin); segments.json — the registry that decides what load() reads — is only written by save(), and last. A crash therefore loses the current ActiveSegment plus any segments sealed since the last save(): their directories exist on disk but are never referenced, so load() simply ignores them. A *referenced* segment with missing or truncated files fails load() with an explicit error — no partial state is loaded.
 
 ## Correctness and testing
 
 - **Unit tests (GoogleTest)**: Every layer has isolated tests. Distance functions tested against naive implementations, HNSW invariants (bidirectional edges, layer assignment distribution) verified after bulk inserts, serializer round-trip tested (write → load → binary-compare).
-- **Benchmarks (Google Benchmark)**: Microbenchmarks for distance kernels, HNSW search, and insert throughput. Tracked across commits to catch performance regressions.
-- **Recall regression in CI**: On every PR, run search on a small fixed dataset (SIFT10K) and assert Recall@10 ≥ threshold. Prevents silent algorithmic regressions.
-- **Sanitizers in CI**: ASan and UBSan on every build. MSan for uninitialized memory in the serialization path.
+- **Benchmarks (Google Benchmark)**: Microbenchmarks for distance kernels, HNSW search, and insert throughput. Cross-commit regression tracking is planned as part of the v0.2 benchmarking suite.
+- **Sanitizers in CI**: ASan and UBSan on every Debug build (GCC 14 and Clang 18 matrix), clang-format enforced. MSan for the serialization path is planned, not yet wired up.
+- **Recall regression in CI (planned, v0.2)**: On every PR, run search on a small fixed dataset (SIFT10K) and assert Recall@10 ≥ threshold, preventing silent algorithmic regressions. Until then, recall is validated manually via the SIFT1M benchmark.
 - **Fuzz testing (stretch goal, v0.2)**: libFuzzer on the persistence loader to catch malformed-file crashes.
 
 ## Open questions
