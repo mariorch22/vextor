@@ -66,6 +66,17 @@ Results are written to `benchmarks/sift1m/results.md`.
 
 Requires Python 3.8+ and NumPy.
 
+Via pip (builds a wheel using scikit-build-core):
+
+```bash
+pip install .
+python3 -c "import vexdb; print('ok')"
+```
+
+On CPython ≥ 3.12 this produces an abi3 wheel that works across Python versions. Note: the wheel is built with the host compiler's AVX2 support — a wheel built on an AVX2 machine requires AVX2 at runtime.
+
+Alternatively, as part of a CMake build:
+
 ```bash
 cmake --preset release-python
 cmake --build build-release-python
