@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/mariorch22/vexdb"
+Repository = "https://github.com/mariorch22/vextor"
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"

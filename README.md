@@ -163,7 +163,7 @@ v0.1 gate (Recall@10 > 0.90): **PASSED** — alle 5 Configs erfüllen das Kriter
 
 ## Project status
 
-v0.1 — MVP. Single-node, single-threaded. See [milestones](https://github.com/mariorch22/vexdb/milestones) for the roadmap.
+v0.1 — MVP. Single-node, single-threaded. See [milestones](https://github.com/mariorch22/vextor/milestones) for the roadmap.
 
 ## License
 

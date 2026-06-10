@@ -137,7 +137,7 @@ v0.1 is single-threaded. No concurrent inserts, no concurrent insert + search. T
 
 v0.2 introduces parallel search across sealed segments. The guarantees:
 
-- **SealedSegments are immutable and lock-free.** Multiple threads can search them concurrently with zero synchronization. This is the main payoff of the Active/Sealed split. Caveat: the current `HnswIndex::search` keeps shared mutable scratch state (generation-based visited tracking), so this guarantee requires per-thread search scratch first — tracked in [#51](https://github.com/mariorch22/vexdb/issues/51) as a prerequisite for parallel search.
+- **SealedSegments are immutable and lock-free.** Multiple threads can search them concurrently with zero synchronization. This is the main payoff of the Active/Sealed split. Caveat: the current `HnswIndex::search` keeps shared mutable scratch state (generation-based visited tracking), so this guarantee requires per-thread search scratch first — tracked in [#51](https://github.com/mariorch22/vextor/issues/51) as a prerequisite for parallel search.
 - **ActiveSegment requires a read-write lock.** Concurrent searches are allowed (shared lock), inserts take an exclusive lock. Insert + search on the active segment are serialized against each other but not against sealed segment searches.
 - **Seal is a stop-the-world operation.** During seal, the active segment is exclusively locked — inserts and searches on it block until the new ActiveSegment is ready. Searches on sealed segments are unaffected.
 
