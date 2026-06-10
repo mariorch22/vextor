@@ -1,0 +1,34 @@
+[build-system]
+requires = ["scikit-build-core>=0.10", "nanobind>=2.4.0"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "vexdb"
+version = "0.1.0"
+description = "Segmented vector database for approximate nearest neighbor search (HNSW, AVX2, mmap)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [{ name = "Mario Raach" }]
+dependencies = ["numpy"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Repository = "https://github.com/mariorch22/vexdb"
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+# Tag the wheel as abi3 when built with CPython >= 3.12 (nanobind's
+# stable-ABI floor); older interpreters get a regular version-tagged wheel.
+wheel.py-api = "cp312"
+
+[tool.scikit-build.cmake.define]
+VEXDB_BUILD_PYTHON = "ON"
+VEXDB_BUILD_TESTS = "OFF"
+VEXDB_BUILD_BENCHMARKS = "OFF"
