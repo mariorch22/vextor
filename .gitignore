@@ -13,3 +13,4 @@ CMakeUserPresets.json
 build*/
 ai-notes/
 benchmarks/sift1m/data/
+.claude/
