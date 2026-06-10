@@ -87,8 +87,8 @@ jobs:
         run: |
           cmake -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-            -DVEXDB_ENABLE_ASAN=${{ matrix.sanitizers && 'ON' || 'OFF' }} \
-            -DVEXDB_ENABLE_UBSAN=${{ matrix.sanitizers && 'ON' || 'OFF' }}
+            -DVEXTOR_ENABLE_ASAN=${{ matrix.sanitizers && 'ON' || 'OFF' }} \
+            -DVEXTOR_ENABLE_UBSAN=${{ matrix.sanitizers && 'ON' || 'OFF' }}
 
       - name: Build
         run: cmake --build build -j$(nproc)

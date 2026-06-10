@@ -9,11 +9,11 @@
 
 // --- Helpers ---
 
-static vexdb::InMemoryStore make_store(int n, vexdb::Dim dim, int seed = 42) {
+static vextor::InMemoryStore make_store(int n, vextor::Dim dim, int seed = 42) {
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 
-    vexdb::InMemoryStore store(dim);
+    vextor::InMemoryStore store(dim);
     for (int i = 0; i < n; i++) {
         std::vector<float> v(dim);
         for (auto& x : v) x = dist(rng);
@@ -22,7 +22,7 @@ static vexdb::InMemoryStore make_store(int n, vexdb::Dim dim, int seed = 42) {
     return store;
 }
 
-static std::vector<float> make_query(vexdb::Dim dim, int seed = 99) {
+static std::vector<float> make_query(vextor::Dim dim, int seed = 99) {
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
     std::vector<float> q(dim);
@@ -36,10 +36,10 @@ static void BM_HnswInsert_10K_128d(benchmark::State& state) {
     for (auto _ : state) {
         state.PauseTiming();
         auto store = make_store(10000, 128);
-        vexdb::HnswIndex index(store, 16, 200);
+        vextor::HnswIndex index(store, 16, 200);
         state.ResumeTiming();
 
-        for (vexdb::Offset i = 0; i < 10000; i++) {
+        for (vextor::Offset i = 0; i < 10000; i++) {
             index.insert();
         }
     }
@@ -50,10 +50,10 @@ static void BM_HnswInsert_10K_128d_EF64(benchmark::State& state) {
     for (auto _ : state) {
         state.PauseTiming();
         auto store = make_store(10000, 128);
-        vexdb::HnswIndex index(store, 16, 64);
+        vextor::HnswIndex index(store, 16, 64);
         state.ResumeTiming();
 
-        for (vexdb::Offset i = 0; i < 10000; i++) {
+        for (vextor::Offset i = 0; i < 10000; i++) {
             index.insert();
         }
     }
@@ -64,7 +64,7 @@ static void BM_HnswInsert_10K_128d_EF64(benchmark::State& state) {
 
 static void BM_HnswSearch_10K_128d(benchmark::State& state) {
     auto store = make_store(10000, 128);
-    vexdb::HnswIndex index(store, 16, 200);
+    vextor::HnswIndex index(store, 16, 200);
     for (int i = 0; i < 10000; i++) index.insert();
 
     auto query = make_query(128);
@@ -76,7 +76,7 @@ static void BM_HnswSearch_10K_128d(benchmark::State& state) {
 
 static void BM_HnswSearch_10K_128d_EF200(benchmark::State& state) {
     auto store = make_store(10000, 128);
-    vexdb::HnswIndex index(store, 16, 200);
+    vextor::HnswIndex index(store, 16, 200);
     for (int i = 0; i < 10000; i++) index.insert();
 
     auto query = make_query(128);
@@ -90,7 +90,7 @@ static void BM_HnswSearch_10K_128d_EF200(benchmark::State& state) {
 
 static void BM_FlatSearch_10K_128d(benchmark::State& state) {
     auto store = make_store(10000, 128);
-    vexdb::FlatIndex index(store);
+    vextor::FlatIndex index(store);
     auto query = make_query(128);
 
     for (auto _ : state) {
@@ -104,10 +104,10 @@ static void BM_HnswInsert_100K_128d(benchmark::State& state) {
     for (auto _ : state) {
         state.PauseTiming();
         auto store = make_store(100000, 128);
-        vexdb::HnswIndex index(store, 16, 200);
+        vextor::HnswIndex index(store, 16, 200);
         state.ResumeTiming();
 
-        for (vexdb::Offset i = 0; i < 100000; i++) {
+        for (vextor::Offset i = 0; i < 100000; i++) {
             index.insert();
         }
     }
@@ -118,10 +118,10 @@ static void BM_HnswInsert_100K_128d_EF64(benchmark::State& state) {
     for (auto _ : state) {
         state.PauseTiming();
         auto store = make_store(100000, 128);
-        vexdb::HnswIndex index(store, 16, 64);
+        vextor::HnswIndex index(store, 16, 64);
         state.ResumeTiming();
 
-        for (vexdb::Offset i = 0; i < 100000; i++) {
+        for (vextor::Offset i = 0; i < 100000; i++) {
             index.insert();
         }
     }
@@ -130,7 +130,7 @@ static void BM_HnswInsert_100K_128d_EF64(benchmark::State& state) {
 
 static void BM_HnswSearch_100K_128d(benchmark::State& state) {
     auto store = make_store(100000, 128);
-    vexdb::HnswIndex index(store, 16, 200);
+    vextor::HnswIndex index(store, 16, 200);
     for (int i = 0; i < 100000; i++) index.insert();
 
     auto query = make_query(128);

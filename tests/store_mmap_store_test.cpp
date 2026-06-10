@@ -12,15 +12,15 @@
 namespace {
 
 // Helper: write a valid VEX0 file with given vectors.
-std::string write_vex0_file(const std::vector<std::vector<float>>& vectors, vexdb::Dim dim) {
-    auto path = std::filesystem::temp_directory_path() / "vexdb_test_XXXXXX.vex0";
+std::string write_vex0_file(const std::vector<std::vector<float>>& vectors, vextor::Dim dim) {
+    auto path = std::filesystem::temp_directory_path() / "vextor_test_XXXXXX.vex0";
     std::string path_str = path.string();
 
     std::ofstream out(path_str, std::ios::binary);
 
-    vexdb::Vex0Header header{};
-    header.magic = vexdb::kVex0Magic;
-    header.version = vexdb::kVex0Version;
+    vextor::Vex0Header header{};
+    header.magic = vextor::kVex0Magic;
+    header.version = vextor::kVex0Version;
     header.dim = dim;
     header.count = static_cast<uint32_t>(vectors.size());
 
@@ -36,7 +36,7 @@ std::string write_vex0_file(const std::vector<std::vector<float>>& vectors, vexd
 }  // namespace
 
 TEST(MmapStore, LoadAndRetrieveVectors) {
-    vexdb::Dim dim = 4;
+    vextor::Dim dim = 4;
     std::vector<std::vector<float>> vecs = {
         {1.0f, 2.0f, 3.0f, 4.0f},
         {5.0f, 6.0f, 7.0f, 8.0f},
@@ -45,7 +45,7 @@ TEST(MmapStore, LoadAndRetrieveVectors) {
 
     auto path = write_vex0_file(vecs, dim);
 
-    vexdb::MmapStore store(path.c_str());
+    vextor::MmapStore store(path.c_str());
     EXPECT_EQ(store.size(), 3);
     EXPECT_EQ(store.dimensions(), 4);
 
@@ -61,7 +61,7 @@ TEST(MmapStore, LoadAndRetrieveVectors) {
 }
 
 TEST(MmapStore, DataIntegrityManyVectors) {
-    vexdb::Dim dim = 128;
+    vextor::Dim dim = 128;
     const int n = 500;
 
     std::vector<std::vector<float>> vecs;
@@ -72,12 +72,12 @@ TEST(MmapStore, DataIntegrityManyVectors) {
 
     auto path = write_vex0_file(vecs, dim);
 
-    vexdb::MmapStore store(path.c_str());
+    vextor::MmapStore store(path.c_str());
     EXPECT_EQ(store.size(), n);
 
     for (int i = 0; i < n; i++) {
-        const float* vec = store.get_vector(static_cast<vexdb::Offset>(i));
-        for (vexdb::Dim d = 0; d < dim; d++) {
+        const float* vec = store.get_vector(static_cast<vextor::Offset>(i));
+        for (vextor::Dim d = 0; d < dim; d++) {
             EXPECT_EQ(vec[d], static_cast<float>(i)) << "Mismatch at vector " << i << " dim " << d;
         }
     }
@@ -86,12 +86,12 @@ TEST(MmapStore, DataIntegrityManyVectors) {
 }
 
 TEST(MmapStore, InvalidMagicThrows) {
-    auto path = std::filesystem::temp_directory_path() / "vexdb_bad_magic.vex0";
+    auto path = std::filesystem::temp_directory_path() / "vextor_bad_magic.vex0";
     std::string path_str = path.string();
 
-    vexdb::Vex0Header header{};
+    vextor::Vex0Header header{};
     header.magic = 0xDEADBEEF;  // wrong magic
-    header.version = vexdb::kVex0Version;
+    header.version = vextor::kVex0Version;
     header.dim = 4;
     header.count = 0;
 
@@ -99,13 +99,13 @@ TEST(MmapStore, InvalidMagicThrows) {
     out.write(reinterpret_cast<const char*>(&header), sizeof(header));
     out.close();
 
-    EXPECT_THROW(vexdb::MmapStore store(path_str.c_str()), std::runtime_error);
+    EXPECT_THROW(vextor::MmapStore store(path_str.c_str()), std::runtime_error);
 
     std::filesystem::remove(path);
 }
 
 TEST(MmapStore, FileTooSmallThrows) {
-    auto path = std::filesystem::temp_directory_path() / "vexdb_truncated.vex0";
+    auto path = std::filesystem::temp_directory_path() / "vextor_truncated.vex0";
     std::string path_str = path.string();
 
     // Write only half a header.
@@ -114,25 +114,25 @@ TEST(MmapStore, FileTooSmallThrows) {
     out.write(reinterpret_cast<const char*>(&partial), sizeof(partial));
     out.close();
 
-    EXPECT_THROW(vexdb::MmapStore store(path_str.c_str()), std::runtime_error);
+    EXPECT_THROW(vextor::MmapStore store(path_str.c_str()), std::runtime_error);
 
     std::filesystem::remove(path);
 }
 
 TEST(MmapStore, MoveSemantics) {
-    vexdb::Dim dim = 3;
+    vextor::Dim dim = 3;
     std::vector<std::vector<float>> vecs = {{1.0f, 2.0f, 3.0f}};
     auto path = write_vex0_file(vecs, dim);
 
-    vexdb::MmapStore store1(path.c_str());
+    vextor::MmapStore store1(path.c_str());
 
     // Move construct.
-    vexdb::MmapStore store2(std::move(store1));
+    vextor::MmapStore store2(std::move(store1));
     EXPECT_EQ(store2.size(), 1);
     EXPECT_EQ(store2.get_vector(0)[0], 1.0f);
 
     // Move assign.
-    vexdb::MmapStore store3(path.c_str());
+    vextor::MmapStore store3(path.c_str());
     store3 = std::move(store2);
     EXPECT_EQ(store3.size(), 1);
     EXPECT_EQ(store3.get_vector(0)[0], 1.0f);

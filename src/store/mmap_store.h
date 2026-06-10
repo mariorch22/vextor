@@ -5,7 +5,7 @@
 #include "core/types.h"
 #include "store/concept.h"
 
-namespace vexdb {
+namespace vextor {
 
 class MmapStore {
    public:
@@ -37,4 +37,4 @@ class MmapStore {
 // assert that Mmap-store is compatible with the VectorStore-concept
 static_assert(VectorStore<MmapStore>);
 
-}  // namespace vexdb
+}  // namespace vextor

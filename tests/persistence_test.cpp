@@ -12,7 +12,7 @@
 namespace {
 
 std::string temp_dir() {
-    auto path = std::filesystem::temp_directory_path() / "vexdb_persist_test";
+    auto path = std::filesystem::temp_directory_path() / "vextor_persist_test";
     std::filesystem::create_directories(path);
     return path.string();
 }
@@ -24,24 +24,24 @@ void cleanup(const std::string& dir) {
 }  // namespace
 
 TEST(Persistence, RoundTripMemory) {
-    vexdb::ActiveSegment seg(32, 100);
+    vextor::ActiveSegment seg(32, 100);
 
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 
-    std::vector<vexdb::VectorId> inserted_ids;
+    std::vector<vextor::VectorId> inserted_ids;
     for (int i = 0; i < 50; i++) {
         std::vector<float> v(32);
         for (auto& x : v) x = dist(rng);
-        vexdb::VectorId id = 1000 + i;
+        vextor::VectorId id = 1000 + i;
         seg.insert(id, v.data());
         inserted_ids.push_back(id);
     }
 
     auto dir = temp_dir();
-    vexdb::serialize_segment(seg, dir + "/seg0");
+    vextor::serialize_segment(seg, dir + "/seg0");
 
-    auto sealed = vexdb::load_segment_memory(dir + "/seg0");
+    auto sealed = vextor::load_segment_memory(dir + "/seg0");
     EXPECT_EQ(sealed.size(), 50);
     EXPECT_EQ(sealed.dimensions(), 32);
 
@@ -52,7 +52,7 @@ TEST(Persistence, RoundTripMemory) {
     auto results = sealed.search(query.data(), 10, 128);
     ASSERT_EQ(results.size(), 10);
 
-    std::set<vexdb::VectorId> id_set(inserted_ids.begin(), inserted_ids.end());
+    std::set<vextor::VectorId> id_set(inserted_ids.begin(), inserted_ids.end());
     for (const auto& r : results) {
         EXPECT_TRUE(id_set.count(r.user_id))
             << "Unexpected user_id " << r.user_id << " in search results";
@@ -67,7 +67,7 @@ TEST(Persistence, RoundTripMemory) {
 }
 
 TEST(Persistence, RoundTripMmap) {
-    vexdb::ActiveSegment seg(16, 100);
+    vextor::ActiveSegment seg(16, 100);
 
     std::mt19937 rng(99);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
@@ -75,13 +75,13 @@ TEST(Persistence, RoundTripMmap) {
     for (int i = 0; i < 30; i++) {
         std::vector<float> v(16);
         for (auto& x : v) x = dist(rng);
-        seg.insert(static_cast<vexdb::VectorId>(i), v.data());
+        seg.insert(static_cast<vextor::VectorId>(i), v.data());
     }
 
     auto dir = temp_dir();
-    vexdb::serialize_segment(seg, dir + "/seg_mmap");
+    vextor::serialize_segment(seg, dir + "/seg_mmap");
 
-    auto sealed = vexdb::load_segment_mmap(dir + "/seg_mmap");
+    auto sealed = vextor::load_segment_mmap(dir + "/seg_mmap");
     EXPECT_EQ(sealed.size(), 30);
     EXPECT_EQ(sealed.dimensions(), 16);
 
@@ -100,9 +100,9 @@ TEST(Persistence, RoundTripMmap) {
 
 TEST(Persistence, SearchResultsMatchBeforeAndAfterSeal) {
     const int n = 200;
-    const vexdb::Dim dim = 64;
+    const vextor::Dim dim = 64;
 
-    vexdb::ActiveSegment seg(dim, n);
+    vextor::ActiveSegment seg(dim, n);
 
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
@@ -110,7 +110,7 @@ TEST(Persistence, SearchResultsMatchBeforeAndAfterSeal) {
     for (int i = 0; i < n; i++) {
         std::vector<float> v(dim);
         for (auto& x : v) x = dist(rng);
-        seg.insert(static_cast<vexdb::VectorId>(i), v.data());
+        seg.insert(static_cast<vextor::VectorId>(i), v.data());
     }
 
     // Search before seal.
@@ -120,8 +120,8 @@ TEST(Persistence, SearchResultsMatchBeforeAndAfterSeal) {
 
     // Seal and reload.
     auto dir = temp_dir();
-    vexdb::serialize_segment(seg, dir + "/seg_match");
-    auto sealed = vexdb::load_segment_memory(dir + "/seg_match");
+    vextor::serialize_segment(seg, dir + "/seg_match");
+    auto sealed = vextor::load_segment_memory(dir + "/seg_match");
 
     auto after = sealed.search(query.data(), 10, 128);
 
@@ -136,10 +136,12 @@ TEST(Persistence, SearchResultsMatchBeforeAndAfterSeal) {
 }
 
 TEST(Persistence, LoadInvalidDirectoryThrows) {
+    EXPECT_THROW(([] {
+                     [[maybe_unused]] const auto _ =
+                         vextor::load_segment_memory("/nonexistent/path");
+                 }()),
+                 std::runtime_error);
     EXPECT_THROW(
-        ([] { [[maybe_unused]] const auto _ = vexdb::load_segment_memory("/nonexistent/path"); }()),
-        std::runtime_error);
-    EXPECT_THROW(
-        ([] { [[maybe_unused]] const auto _ = vexdb::load_segment_mmap("/nonexistent/path"); }()),
+        ([] { [[maybe_unused]] const auto _ = vextor::load_segment_mmap("/nonexistent/path"); }()),
         std::runtime_error);
 }

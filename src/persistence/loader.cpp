@@ -9,7 +9,7 @@
 #include "store/in_memory_store.h"
 #include "store/mmap_store.h"
 
-namespace vexdb {
+namespace vextor {
 
 // Bound for per-node HNSW level from disk (defense against corrupt hnsw.bin).
 constexpr int k_max_plausible_hnsw_node_level = 64;
@@ -133,4 +133,4 @@ SealedSegment load_segment_memory(const std::string& dir) {
     return SealedSegment::from_memory(std::move(store), std::move(graph), std::move(ids));
 }
 
-}  // namespace vexdb
+}  // namespace vextor

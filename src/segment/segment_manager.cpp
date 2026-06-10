@@ -10,7 +10,7 @@
 #include "persistence/loader.h"
 #include "persistence/serializer.h"
 
-namespace vexdb {
+namespace vextor {
 
 SegmentManager::SegmentManager(Dim dim, std::size_t segment_capacity, const std::string& db_path,
                                int m, int ef_construction)
@@ -169,4 +169,4 @@ Dim SegmentManager::dimensions() const {
     return dim_;
 }
 
-}  // namespace vexdb
+}  // namespace vextor

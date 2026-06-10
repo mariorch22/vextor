@@ -7,7 +7,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-add_executable(vexdb_tests
+add_executable(vextor_tests
     core_types_test.cpp
     core_distance_test.cpp
     core_sq8_test.cpp
@@ -20,10 +20,10 @@ add_executable(vexdb_tests
     segment_sealed_segment_test.cpp
     segment_segment_manager_test.cpp
     persistence_test.cpp
-    vexdb_public_api_test.cpp
+    vextor_public_api_test.cpp
 )
 
-target_link_libraries(vexdb_tests PRIVATE vexdb GTest::gtest_main)
+target_link_libraries(vextor_tests PRIVATE vextor GTest::gtest_main)
 
 include(GoogleTest)
-gtest_discover_tests(vexdb_tests)
+gtest_discover_tests(vextor_tests)

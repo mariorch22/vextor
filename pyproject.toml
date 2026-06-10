@@ -3,7 +3,7 @@ requires = ["scikit-build-core>=0.10", "nanobind>=2.4.0"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "vexdb"
+name = "vextor"
 version = "0.1.0"
 description = "Segmented vector database for approximate nearest neighbor search (HNSW, AVX2, mmap)"
 readme = "README.md"
@@ -29,6 +29,6 @@ minimum-version = "build-system.requires"
 wheel.py-api = "cp312"
 
 [tool.scikit-build.cmake.define]
-VEXDB_BUILD_PYTHON = "ON"
-VEXDB_BUILD_TESTS = "OFF"
-VEXDB_BUILD_BENCHMARKS = "OFF"
+VEXTOR_BUILD_PYTHON = "ON"
+VEXTOR_BUILD_TESTS = "OFF"
+VEXTOR_BUILD_BENCHMARKS = "OFF"

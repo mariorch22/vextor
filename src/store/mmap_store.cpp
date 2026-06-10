@@ -12,7 +12,7 @@
 
 #include "persistence/format.h"
 
-namespace vexdb {
+namespace vextor {
 
 MmapStore::MmapStore(const char* path) {
     // open read-only file. Returns -1 if it cannot open the file.
@@ -146,4 +146,4 @@ Dim MmapStore::dimensions() const {
     return dim_;
 }
 
-}  // namespace vexdb
+}  // namespace vextor

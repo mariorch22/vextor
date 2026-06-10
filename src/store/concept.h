@@ -5,7 +5,7 @@
 
 #include "core/types.h"
 
-namespace vexdb {
+namespace vextor {
 
 template <typename T>
 concept VectorStore = requires(const T store, Offset offset) {
@@ -14,4 +14,4 @@ concept VectorStore = requires(const T store, Offset offset) {
     { store.dimensions() } -> std::same_as<Dim>;
 };
 
-}  // namespace vexdb
+}  // namespace vextor

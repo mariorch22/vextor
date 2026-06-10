@@ -7,21 +7,21 @@
 
 namespace nb = nanobind;
 
-NB_MODULE(vexdb, m) {
-    m.doc() = "vexdb — segmented vector database for ANN search";
+NB_MODULE(vextor, m) {
+    m.doc() = "vextor — segmented vector database for ANN search";
 
-    nb::class_<vexdb::SegmentManager>(m, "Database")
+    nb::class_<vextor::SegmentManager>(m, "Database")
         .def(
             "__init__",
-            [](vexdb::SegmentManager* self, vexdb::Dim dimensions, std::size_t segment_capacity,
+            [](vextor::SegmentManager* self, vextor::Dim dimensions, std::size_t segment_capacity,
                const std::string& path) {
-                new (self) vexdb::SegmentManager(dimensions, segment_capacity, path);
+                new (self) vextor::SegmentManager(dimensions, segment_capacity, path);
             },
             nb::arg("dimensions"), nb::arg("segment_capacity"), nb::arg("path") = "")
 
         .def(
             "insert",
-            [](vexdb::SegmentManager& self, vexdb::VectorId user_id,
+            [](vextor::SegmentManager& self, vextor::VectorId user_id,
                nb::ndarray<float, nb::ndim<1>, nb::c_contig> vec) {
                 self.insert(user_id, {vec.data(), vec.shape(0)});
             },
@@ -29,7 +29,7 @@ NB_MODULE(vexdb, m) {
 
         .def(
             "insert_batch",
-            [](vexdb::SegmentManager& self, nb::ndarray<uint64_t, nb::ndim<1>, nb::c_contig> ids,
+            [](vextor::SegmentManager& self, nb::ndarray<uint64_t, nb::ndim<1>, nb::c_contig> ids,
                nb::ndarray<float, nb::ndim<2>, nb::c_contig> vecs) {
                 if (ids.shape(0) != vecs.shape(0))
                     throw std::invalid_argument("user_ids and vectors must have same length");
@@ -45,7 +45,7 @@ NB_MODULE(vexdb, m) {
 
         .def(
             "search",
-            [](const vexdb::SegmentManager& self,
+            [](const vextor::SegmentManager& self,
                nb::ndarray<float, nb::ndim<1>, nb::c_contig> query, std::size_t k) {
                 auto results = self.search({query.data(), query.shape(0)}, k);
                 nb::list out;
@@ -56,11 +56,11 @@ NB_MODULE(vexdb, m) {
             },
             nb::arg("query").noconvert(), nb::arg("k"))
 
-        .def("save", &vexdb::SegmentManager::save)
+        .def("save", &vextor::SegmentManager::save)
 
-        .def_static("load", &vexdb::SegmentManager::load, nb::arg("path"))
+        .def_static("load", &vextor::SegmentManager::load, nb::arg("path"))
 
-        .def_prop_ro("size", &vexdb::SegmentManager::total_vectors)
-        .def_prop_ro("dimensions", &vexdb::SegmentManager::dimensions)
-        .def_prop_ro("segment_count", &vexdb::SegmentManager::segment_count);
+        .def_prop_ro("size", &vextor::SegmentManager::total_vectors)
+        .def_prop_ro("dimensions", &vextor::SegmentManager::dimensions)
+        .def_prop_ro("segment_count", &vextor::SegmentManager::segment_count);
 }

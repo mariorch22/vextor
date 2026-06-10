@@ -3,7 +3,7 @@
 #include <cassert>
 #include <stdexcept>
 
-namespace vexdb {
+namespace vextor {
 
 Offset IdMapping::insert(VectorId user_id) {
     if (id_to_offset_.count(user_id)) {
@@ -30,4 +30,4 @@ std::size_t IdMapping::size() const {
     return offset_to_id_.size();
 }
 
-}  // namespace vexdb
+}  // namespace vextor

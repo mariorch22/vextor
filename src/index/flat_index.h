@@ -10,7 +10,7 @@
 #include "core/types.h"
 #include "store/concept.h"
 
-namespace vexdb {
+namespace vextor {
 
 template <VectorStore Store>
 class FlatIndex {
@@ -50,4 +50,4 @@ class FlatIndex {
     const Store& store_;
 };
 
-}  // namespace vexdb
+}  // namespace vextor

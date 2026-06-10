@@ -61,7 +61,7 @@ static std::vector<std::vector<int32_t>> load_ivecs(const std::string& path) {
 
 // ── Recall computation ──────────────────────────────────────
 
-static double compute_recall(const std::vector<vexdb::QueryResult>& results,
+static double compute_recall(const std::vector<vextor::QueryResult>& results,
                              const std::vector<int32_t>& gt, int at_k) {
     int hits = 0;
     std::set<int32_t> gt_set(gt.begin(), gt.begin() + std::min(at_k, static_cast<int>(gt.size())));
@@ -197,15 +197,15 @@ int main(int argc, char* argv[]) {
                   << " ef_construction=" << group.index.ef_construction << " ===" << std::endl;
 
         // Build via SegmentManager — capacity > base_count so no seal fires during build.
-        vexdb::SegmentManager db(static_cast<vexdb::Dim>(base_dim), 1'100'000, "", group.index.m,
-                                 group.index.ef_construction);
+        vextor::SegmentManager db(static_cast<vextor::Dim>(base_dim), 1'100'000, "", group.index.m,
+                                  group.index.ef_construction);
 
         auto t0 = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < base_count; i++) {
             if (i % 100000 == 0 && i > 0) {
                 std::cout << "  Inserted " << i << "/" << base_count << std::endl;
             }
-            db.insert(static_cast<vexdb::VectorId>(i),
+            db.insert(static_cast<vextor::VectorId>(i),
                       {&base[static_cast<std::size_t>(i) * base_dim],
                        static_cast<std::size_t>(base_dim)});
         }
@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
             }
 
             // Pass 1: reine Suche — nur dieser Block wird für QPS gemessen.
-            std::vector<std::vector<vexdb::QueryResult>> all_results(query_count);
+            std::vector<std::vector<vextor::QueryResult>> all_results(query_count);
             auto t2 = std::chrono::high_resolution_clock::now();
             for (int q = 0; q < query_count; q++) {
                 all_results[q] = db.search({&queries[static_cast<std::size_t>(q) * query_dim],

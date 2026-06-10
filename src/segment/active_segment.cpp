@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-namespace vexdb {
+namespace vextor {
 
 ActiveSegment::ActiveSegment(Dim dim, std::size_t capacity, int m, int ef_construction)
     : store_(dim), index_(store_, m, ef_construction), capacity_(capacity) {}
@@ -52,4 +52,4 @@ Dim ActiveSegment::dimensions() const {
     return store_.dimensions();
 }
 
-}  // namespace vexdb
+}  // namespace vextor

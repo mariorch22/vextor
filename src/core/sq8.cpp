@@ -5,11 +5,11 @@
 #include <limits>
 #include <stdexcept>
 
-#ifdef VEXDB_AVX2
+#ifdef VEXTOR_AVX2
 #include <immintrin.h>
 #endif
 
-namespace vexdb {
+namespace vextor {
 
 SQ8Params sq8_compute_params(const float* vectors, std::size_t n, Dim dim) {
     if (n == 0) throw std::invalid_argument("sq8_compute_params: n must be > 0");
@@ -75,7 +75,7 @@ float sq8_asymmetric_l2_scalar(const float* query, const uint8_t* encoded,
 
 // --- AVX2 asymmetric L2 ---
 
-#ifdef VEXDB_AVX2
+#ifdef VEXTOR_AVX2
 float sq8_asymmetric_l2(const float* query, const uint8_t* encoded, const SQ8Params& params) {
     const float* min = params.min.data();
     const float* scale = params.scale.data();
@@ -124,4 +124,4 @@ float sq8_asymmetric_l2(const float* query, const uint8_t* encoded, const SQ8Par
 }
 #endif
 
-}  // namespace vexdb
+}  // namespace vextor

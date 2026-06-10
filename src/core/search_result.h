@@ -4,7 +4,7 @@
 
 #include "core/types.h"
 
-namespace vexdb {
+namespace vextor {
 
 struct SearchResult {
     Offset offset;
@@ -20,4 +20,4 @@ struct SearchResult {
     bool operator==(const SearchResult& other) const = default;
 };
 
-}  // namespace vexdb
+}  // namespace vextor

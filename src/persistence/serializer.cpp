@@ -7,7 +7,7 @@
 
 #include "persistence/format.h"
 
-namespace vexdb {
+namespace vextor {
 
 static void write_vectors(const InMemoryStore& store, const std::string& path) {
     std::ofstream out(path, std::ios::binary);
@@ -84,4 +84,4 @@ void serialize_segment(const ActiveSegment& segment, const std::string& dir) {
     write_ids(segment.id_mapping(), dir + "/ids.bin");
 }
 
-}  // namespace vexdb
+}  // namespace vextor

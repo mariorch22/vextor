@@ -7,10 +7,10 @@
 #include "segment/sealed_segment.h"
 
 // Helper: build an ActiveSegment, extract its components, and create a SealedSegment.
-static vexdb::SealedSegment make_sealed_from_active(int n, vexdb::Dim dim) {
-    vexdb::InMemoryStore store(dim);
-    vexdb::HnswIndex<vexdb::InMemoryStore> index(store, 16, 200);
-    vexdb::IdMapping id_mapping;
+static vextor::SealedSegment make_sealed_from_active(int n, vextor::Dim dim) {
+    vextor::InMemoryStore store(dim);
+    vextor::HnswIndex<vextor::InMemoryStore> index(store, 16, 200);
+    vextor::IdMapping id_mapping;
 
     std::mt19937 rng(42);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
@@ -20,11 +20,11 @@ static vexdb::SealedSegment make_sealed_from_active(int n, vexdb::Dim dim) {
         for (auto& x : v) x = dist(rng);
         store.add_vector(v.data());
         index.insert();
-        id_mapping.insert(static_cast<vexdb::VectorId>(1000 + i));
+        id_mapping.insert(static_cast<vextor::VectorId>(1000 + i));
     }
 
-    return vexdb::SealedSegment::from_memory(std::move(store), index.graph(),
-                                             std::move(id_mapping));
+    return vextor::SealedSegment::from_memory(std::move(store), index.graph(),
+                                              std::move(id_mapping));
 }
 
 TEST(SealedSegment, SizeAndDimensions) {
@@ -34,9 +34,9 @@ TEST(SealedSegment, SizeAndDimensions) {
 }
 
 TEST(SealedSegment, SearchReturnsUserIds) {
-    vexdb::InMemoryStore store(2);
-    vexdb::HnswIndex<vexdb::InMemoryStore> index(store, 16);
-    vexdb::IdMapping id_mapping;
+    vextor::InMemoryStore store(2);
+    vextor::HnswIndex<vextor::InMemoryStore> index(store, 16);
+    vextor::IdMapping id_mapping;
 
     store.add_vector(std::vector<float>{0.0f, 0.0f}.data());
     index.insert();
@@ -51,14 +51,14 @@ TEST(SealedSegment, SearchReturnsUserIds) {
     id_mapping.insert(77);
 
     auto seg =
-        vexdb::SealedSegment::from_memory(std::move(store), index.graph(), std::move(id_mapping));
+        vextor::SealedSegment::from_memory(std::move(store), index.graph(), std::move(id_mapping));
 
     std::vector<float> query = {0.0f, 0.0f};
     auto results = seg.search(query.data(), 3);
 
     ASSERT_EQ(results.size(), 3);
 
-    std::set<vexdb::VectorId> ids;
+    std::set<vextor::VectorId> ids;
     for (const auto& r : results) ids.insert(r.user_id);
 
     EXPECT_TRUE(ids.count(42));
@@ -90,17 +90,17 @@ TEST(SealedSegment, NoInsertAvailable) {
 }
 
 TEST(SealedSegment, LargeUserIdPreserved) {
-    vexdb::InMemoryStore store(2);
-    vexdb::HnswIndex<vexdb::InMemoryStore> index(store, 16);
-    vexdb::IdMapping id_mapping;
+    vextor::InMemoryStore store(2);
+    vextor::HnswIndex<vextor::InMemoryStore> index(store, 16);
+    vextor::IdMapping id_mapping;
 
-    vexdb::VectorId big_id = 1ULL << 40;
+    vextor::VectorId big_id = 1ULL << 40;
     store.add_vector(std::vector<float>{1.0f, 0.0f}.data());
     index.insert();
     id_mapping.insert(big_id);
 
     auto seg =
-        vexdb::SealedSegment::from_memory(std::move(store), index.graph(), std::move(id_mapping));
+        vextor::SealedSegment::from_memory(std::move(store), index.graph(), std::move(id_mapping));
 
     auto results = seg.search(std::vector<float>{1.0f, 0.0f}.data(), 1);
     ASSERT_EQ(results.size(), 1);

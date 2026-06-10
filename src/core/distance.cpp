@@ -1,10 +1,10 @@
 #include "core/distance.h"
 
-#ifdef VEXDB_AVX2
+#ifdef VEXTOR_AVX2
 #include <immintrin.h>
 #endif
 
-namespace vexdb {
+namespace vextor {
 
 float l2_distance_scalar(const float* a, const float* b, Dim dim) {
     float sum = 0.0f;
@@ -15,7 +15,7 @@ float l2_distance_scalar(const float* a, const float* b, Dim dim) {
     return sum;
 }
 
-#ifdef VEXDB_AVX2
+#ifdef VEXTOR_AVX2
 float l2_distance(const float* a, const float* b, Dim dim) {
     __m256 sum = _mm256_setzero_ps();
     Dim i = 0;
@@ -45,4 +45,4 @@ float l2_distance(const float* a, const float* b, Dim dim) {
 }
 #endif
 
-}  // namespace vexdb
+}  // namespace vextor

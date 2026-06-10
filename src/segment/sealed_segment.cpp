@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace vexdb {
+namespace vextor {
 
 static void validate_components(std::size_t store_size, std::size_t graph_size,
                                 std::size_t mapping_size) {
@@ -49,4 +49,4 @@ Dim SealedSegment::dimensions() const {
     return backend_->dimensions();
 }
 
-}  // namespace vexdb
+}  // namespace vextor

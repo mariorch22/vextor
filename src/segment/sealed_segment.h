@@ -12,7 +12,7 @@
 #include "store/in_memory_store.h"
 #include "store/mmap_store.h"
 
-namespace vexdb {
+namespace vextor {
 
 class SealedSegment {
    public:
@@ -57,4 +57,4 @@ class SealedSegment {
     IdMapping id_mapping_;
 };
 
-}  // namespace vexdb
+}  // namespace vextor
