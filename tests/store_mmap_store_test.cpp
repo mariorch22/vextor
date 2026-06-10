@@ -11,9 +11,12 @@
 
 namespace {
 
-// Helper: write a valid VEX0 file with given vectors.
-std::string write_vex0_file(const std::vector<std::vector<float>>& vectors, vextor::Dim dim) {
-    auto path = std::filesystem::temp_directory_path() / "vextor_test_XXXXXX.vex0";
+// Helper: write a valid VEX0 file with given vectors. Each test passes a
+// unique name so tests stay independent under `ctest --parallel` — a shared
+// file gets rewritten while another test still has it mmap'ed (SIGBUS).
+std::string write_vex0_file(const std::string& name, const std::vector<std::vector<float>>& vectors,
+                            vextor::Dim dim) {
+    auto path = std::filesystem::temp_directory_path() / ("vextor_" + name + ".vex0");
     std::string path_str = path.string();
 
     std::ofstream out(path_str, std::ios::binary);
@@ -43,7 +46,7 @@ TEST(MmapStore, LoadAndRetrieveVectors) {
         {9.0f, 10.0f, 11.0f, 12.0f},
     };
 
-    auto path = write_vex0_file(vecs, dim);
+    auto path = write_vex0_file("load_and_retrieve", vecs, dim);
 
     vextor::MmapStore store(path.c_str());
     EXPECT_EQ(store.size(), 3);
@@ -70,7 +73,7 @@ TEST(MmapStore, DataIntegrityManyVectors) {
         vecs.emplace_back(dim, static_cast<float>(i));
     }
 
-    auto path = write_vex0_file(vecs, dim);
+    auto path = write_vex0_file("data_integrity", vecs, dim);
 
     vextor::MmapStore store(path.c_str());
     EXPECT_EQ(store.size(), n);
@@ -122,7 +125,7 @@ TEST(MmapStore, FileTooSmallThrows) {
 TEST(MmapStore, MoveSemantics) {
     vextor::Dim dim = 3;
     std::vector<std::vector<float>> vecs = {{1.0f, 2.0f, 3.0f}};
-    auto path = write_vex0_file(vecs, dim);
+    auto path = write_vex0_file("move_semantics", vecs, dim);
 
     vextor::MmapStore store1(path.c_str());
 
