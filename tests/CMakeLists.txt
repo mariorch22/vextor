@@ -20,6 +20,7 @@ add_executable(vexdb_tests
     segment_sealed_segment_test.cpp
     segment_segment_manager_test.cpp
     persistence_test.cpp
+    vexdb_public_api_test.cpp
 )
 
 target_link_libraries(vexdb_tests PRIVATE vexdb GTest::gtest_main)
