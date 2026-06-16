@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <fstream>
 #include <random>
 #include <vector>
 
@@ -12,6 +13,12 @@ std::string make_temp_dir(const std::string& name) {
     auto path = std::filesystem::temp_directory_path() / ("vextor_" + name);
     std::filesystem::remove_all(path);
     return path.string();
+}
+
+void write_registry(const std::string& dir, const std::string& content) {
+    std::filesystem::create_directories(dir);
+    std::ofstream out(std::filesystem::path(dir) / "segments.json");
+    out << content;
 }
 
 }  // namespace
@@ -92,7 +99,7 @@ TEST(SegmentManager, SaveAndLoadRoundTrip) {
     std::vector<float> query(8);
     for (auto& x : query) x = dist(rng);
 
-    auto results = mgr.search(query, 5, 128);
+    auto results = mgr.search(query, 5, vextor::HnswSearchParams{.ef_search = 128});
     ASSERT_EQ(results.size(), 5);
 
     for (std::size_t i = 1; i < results.size(); i++) {
@@ -125,6 +132,147 @@ TEST(SegmentManager, SaveAndLoadWithSealedSegments) {
     auto results = mgr.search(std::vector<float>{0.0f, 0.0f, 0.0f, 0.0f}, 3);
     ASSERT_EQ(results.size(), 3);
     EXPECT_EQ(results[0].user_id, 0);
+
+    std::filesystem::remove_all(dir);
+}
+
+TEST(SegmentManager, SealedSegmentsSurviveCrashWithoutSave) {
+    auto dir = make_temp_dir("mgr_crash_no_save");
+
+    {
+        vextor::SegmentManager mgr(4, 5, dir);
+
+        // 12 inserts with capacity 5: two seals, 2 vectors left in the active segment.
+        for (int i = 0; i < 12; i++) {
+            std::vector<float> v = {static_cast<float>(i), 0.0f, 0.0f, 0.0f};
+            mgr.insert(static_cast<vextor::VectorId>(i), v);
+        }
+        EXPECT_EQ(mgr.segment_count(), 3);
+        // Simulated crash: no save().
+    }
+
+    // Only the active segment is lost; both sealed segments must be recovered.
+    auto mgr = vextor::SegmentManager::load(dir);
+    EXPECT_EQ(mgr.total_vectors(), 10);
+
+    auto results = mgr.search(std::vector<float>{0.0f, 0.0f, 0.0f, 0.0f}, 3);
+    ASSERT_EQ(results.size(), 3);
+    EXPECT_EQ(results[0].user_id, 0);
+
+    // IDs from sealed segments are known after load.
+    EXPECT_THROW(mgr.insert(9, std::vector<float>{0.0f, 0.0f, 0.0f, 0.0f}), std::invalid_argument);
+
+    std::filesystem::remove_all(dir);
+}
+
+TEST(SegmentManager, RegistryWriteIsAtomic) {
+    auto dir = make_temp_dir("mgr_registry_atomic");
+    const auto registry = std::filesystem::path(dir) / "segments.json";
+    const auto tmp = std::filesystem::path(dir) / "segments.json.tmp";
+
+    {
+        vextor::SegmentManager mgr(4, 5, dir);
+        for (int i = 0; i < 7; i++) {
+            std::vector<float> v = {static_cast<float>(i), 0.0f, 0.0f, 0.0f};
+            mgr.insert(static_cast<vextor::VectorId>(i), v);
+        }
+        mgr.save();
+    }
+
+    // The temp file must never survive a completed registry write.
+    EXPECT_TRUE(std::filesystem::exists(registry));
+    EXPECT_FALSE(std::filesystem::exists(tmp));
+
+    // Simulate a crash mid-write: a torn temp file is left behind, the registry
+    // itself is untouched. load() must only ever read segments.json.
+    {
+        std::ofstream torn(tmp);
+        torn << "{ \"version\": 1, \"dim\": 4, \"segment_ca";
+    }
+
+    auto mgr = vextor::SegmentManager::load(dir);
+    EXPECT_EQ(mgr.total_vectors(), 7);
+
+    std::filesystem::remove_all(dir);
+}
+
+TEST(SegmentManager, RegistryIncludesFormatVersion) {
+    auto dir = make_temp_dir("mgr_registry_format_version");
+    const auto registry = std::filesystem::path(dir) / "segments.json";
+
+    {
+        vextor::SegmentManager mgr(4, 5, dir);
+        mgr.insert(1, std::vector<float>{1.0f, 0.0f, 0.0f, 0.0f});
+        mgr.save();
+    }
+
+    std::ifstream in(registry);
+    const std::string content((std::istreambuf_iterator<char>(in)),
+                              std::istreambuf_iterator<char>());
+    EXPECT_NE(content.find("\"format_version\": 1"), std::string::npos);
+
+    std::filesystem::remove_all(dir);
+}
+
+TEST(SegmentManager, LoadRejectsUnknownRegistryFormatVersion) {
+    auto dir = make_temp_dir("mgr_registry_unknown_version");
+    write_registry(dir, R"({
+  "format_version": 2,
+  "dim": 4,
+  "segment_capacity": 5,
+  "m": 16,
+  "ef_construction": 200,
+  "segment_count": 0
+})");
+
+    EXPECT_THROW((void)vextor::SegmentManager::load(dir), std::runtime_error);
+
+    std::filesystem::remove_all(dir);
+}
+
+TEST(SegmentManager, LoadRejectsMissingRegistryKey) {
+    auto dir = make_temp_dir("mgr_registry_missing_key");
+    write_registry(dir, R"({
+  "format_version": 1,
+  "dim": 4,
+  "segment_capacity": 5,
+  "m": 16,
+  "ef_construction": 200
+})");
+
+    EXPECT_THROW((void)vextor::SegmentManager::load(dir), std::runtime_error);
+
+    std::filesystem::remove_all(dir);
+}
+
+TEST(SegmentManager, LoadRejectsNegativeRegistryValue) {
+    auto dir = make_temp_dir("mgr_registry_negative_value");
+    write_registry(dir, R"({
+  "format_version": 1,
+  "dim": 4,
+  "segment_capacity": -5,
+  "m": 16,
+  "ef_construction": 200,
+  "segment_count": 0
+})");
+
+    EXPECT_THROW((void)vextor::SegmentManager::load(dir), std::runtime_error);
+
+    std::filesystem::remove_all(dir);
+}
+
+TEST(SegmentManager, LoadRejectsOverflowRegistryValue) {
+    auto dir = make_temp_dir("mgr_registry_overflow_value");
+    write_registry(dir, R"({
+  "format_version": 1,
+  "dim": 4,
+  "segment_capacity": 5,
+  "m": 18446744073709551616,
+  "ef_construction": 200,
+  "segment_count": 0
+})");
+
+    EXPECT_THROW((void)vextor::SegmentManager::load(dir), std::runtime_error);
 
     std::filesystem::remove_all(dir);
 }
@@ -164,7 +312,7 @@ TEST(SegmentManager, RecallAcrossSegments) {
     std::vector<float> query(dim);
     for (auto& x : query) x = dist(rng);
 
-    auto results = mgr.search(query, 10, 128);
+    auto results = mgr.search(query, 10, vextor::HnswSearchParams{.ef_search = 128});
     ASSERT_EQ(results.size(), 10);
 
     for (std::size_t i = 1; i < results.size(); i++) {

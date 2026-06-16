@@ -52,7 +52,7 @@ TEST(Persistence, RoundTripMemory) {
     std::vector<float> query(32);
     for (auto& x : query) x = dist(rng);
 
-    auto results = sealed.search(query.data(), 10, 128);
+    auto results = sealed.search(query.data(), 10, vextor::HnswSearchParams{.ef_search = 128});
     ASSERT_EQ(results.size(), 10);
 
     std::set<vextor::VectorId> id_set(inserted_ids.begin(), inserted_ids.end());
@@ -91,7 +91,7 @@ TEST(Persistence, RoundTripMmap) {
     std::vector<float> query(16);
     for (auto& x : query) x = dist(rng);
 
-    auto results = sealed.search(query.data(), 5, 128);
+    auto results = sealed.search(query.data(), 5, vextor::HnswSearchParams{.ef_search = 128});
     ASSERT_EQ(results.size(), 5);
 
     for (std::size_t i = 1; i < results.size(); i++) {
@@ -119,14 +119,14 @@ TEST(Persistence, SearchResultsMatchBeforeAndAfterSeal) {
     // Search before seal.
     std::vector<float> query(dim);
     for (auto& x : query) x = dist(rng);
-    auto before = seg.search(query.data(), 10, 128);
+    auto before = seg.search(query.data(), 10, vextor::HnswSearchParams{.ef_search = 128});
 
     // Seal and reload.
     auto dir = temp_dir("match_before_after_seal");
     vextor::serialize_segment(seg, dir + "/seg_match");
     auto sealed = vextor::load_segment_memory(dir + "/seg_match");
 
-    auto after = sealed.search(query.data(), 10, 128);
+    auto after = sealed.search(query.data(), 10, vextor::HnswSearchParams{.ef_search = 128});
 
     // Results should be identical.
     ASSERT_EQ(before.size(), after.size());

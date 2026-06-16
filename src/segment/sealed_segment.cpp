@@ -31,8 +31,8 @@ SealedSegment SealedSegment::from_mmap(MmapStore store, HnswGraph graph, IdMappi
 }
 
 std::vector<QueryResult> SealedSegment::search(const float* query, std::size_t k,
-                                               int ef_search) const {
-    auto internal = backend_->search(query, k, ef_search);
+                                               HnswSearchParams params) const {
+    auto internal = backend_->search(query, k, params);
     std::vector<QueryResult> results;
     results.reserve(internal.size());
     for (const auto& r : internal) {

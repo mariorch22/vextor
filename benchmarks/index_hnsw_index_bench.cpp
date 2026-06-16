@@ -36,7 +36,7 @@ static void BM_HnswInsert_10K_128d(benchmark::State& state) {
     for (auto _ : state) {
         state.PauseTiming();
         auto store = make_store(10000, 128);
-        vextor::HnswIndex index(store, 16, 200);
+        vextor::HnswIndex index(store);
         state.ResumeTiming();
 
         for (vextor::Offset i = 0; i < 10000; i++) {
@@ -50,7 +50,7 @@ static void BM_HnswInsert_10K_128d_EF64(benchmark::State& state) {
     for (auto _ : state) {
         state.PauseTiming();
         auto store = make_store(10000, 128);
-        vextor::HnswIndex index(store, 16, 64);
+        vextor::HnswIndex index(store, vextor::HnswBuildParams{.ef_construction = 64});
         state.ResumeTiming();
 
         for (vextor::Offset i = 0; i < 10000; i++) {
@@ -64,25 +64,27 @@ static void BM_HnswInsert_10K_128d_EF64(benchmark::State& state) {
 
 static void BM_HnswSearch_10K_128d(benchmark::State& state) {
     auto store = make_store(10000, 128);
-    vextor::HnswIndex index(store, 16, 200);
+    vextor::HnswIndex index(store);
     for (int i = 0; i < 10000; i++) index.insert();
 
     auto query = make_query(128);
 
     for (auto _ : state) {
-        benchmark::DoNotOptimize(index.search(query.data(), 10, 64));
+        benchmark::DoNotOptimize(
+            index.search(query.data(), 10, vextor::HnswSearchParams{.ef_search = 64}));
     }
 }
 
 static void BM_HnswSearch_10K_128d_EF200(benchmark::State& state) {
     auto store = make_store(10000, 128);
-    vextor::HnswIndex index(store, 16, 200);
+    vextor::HnswIndex index(store);
     for (int i = 0; i < 10000; i++) index.insert();
 
     auto query = make_query(128);
 
     for (auto _ : state) {
-        benchmark::DoNotOptimize(index.search(query.data(), 10, 200));
+        benchmark::DoNotOptimize(
+            index.search(query.data(), 10, vextor::HnswSearchParams{.ef_search = 200}));
     }
 }
 
@@ -104,7 +106,7 @@ static void BM_HnswInsert_100K_128d(benchmark::State& state) {
     for (auto _ : state) {
         state.PauseTiming();
         auto store = make_store(100000, 128);
-        vextor::HnswIndex index(store, 16, 200);
+        vextor::HnswIndex index(store);
         state.ResumeTiming();
 
         for (vextor::Offset i = 0; i < 100000; i++) {
@@ -118,7 +120,7 @@ static void BM_HnswInsert_100K_128d_EF64(benchmark::State& state) {
     for (auto _ : state) {
         state.PauseTiming();
         auto store = make_store(100000, 128);
-        vextor::HnswIndex index(store, 16, 64);
+        vextor::HnswIndex index(store, vextor::HnswBuildParams{.ef_construction = 64});
         state.ResumeTiming();
 
         for (vextor::Offset i = 0; i < 100000; i++) {
@@ -130,13 +132,14 @@ static void BM_HnswInsert_100K_128d_EF64(benchmark::State& state) {
 
 static void BM_HnswSearch_100K_128d(benchmark::State& state) {
     auto store = make_store(100000, 128);
-    vextor::HnswIndex index(store, 16, 200);
+    vextor::HnswIndex index(store);
     for (int i = 0; i < 100000; i++) index.insert();
 
     auto query = make_query(128);
 
     for (auto _ : state) {
-        benchmark::DoNotOptimize(index.search(query.data(), 10, 128));
+        benchmark::DoNotOptimize(
+            index.search(query.data(), 10, vextor::HnswSearchParams{.ef_search = 128}));
     }
 }
 

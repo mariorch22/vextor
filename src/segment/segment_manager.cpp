@@ -1,6 +1,7 @@
 #include "segment/segment_manager.h"
 
 #include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <limits>
@@ -12,14 +13,53 @@
 
 namespace vextor {
 
+namespace {
+
+constexpr unsigned long long k_segments_json_format_version = 1;
+
+unsigned long long extract_json_uint(const std::string& content, const std::string& key) {
+    auto pos = content.find("\"" + key + "\"");
+    if (pos == std::string::npos) throw std::runtime_error("load: missing key " + key);
+
+    pos = content.find(':', pos);
+    if (pos == std::string::npos) throw std::runtime_error("load: missing ':' for key " + key);
+    pos++;
+
+    while (pos < content.size() && std::isspace(static_cast<unsigned char>(content[pos]))) pos++;
+
+    if (pos == content.size()) throw std::runtime_error("load: missing value for key " + key);
+    if (content[pos] == '-') throw std::runtime_error("load: negative value for key " + key);
+    if (!std::isdigit(static_cast<unsigned char>(content[pos]))) {
+        throw std::runtime_error("load: invalid value for key " + key);
+    }
+
+    unsigned long long value = 0;
+    while (pos < content.size() && std::isdigit(static_cast<unsigned char>(content[pos]))) {
+        const unsigned digit = static_cast<unsigned>(content[pos] - '0');
+        if (value > ((std::numeric_limits<unsigned long long>::max)() - digit) / 10) {
+            throw std::runtime_error("load: value out of range for key " + key);
+        }
+        value = value * 10 + digit;
+        pos++;
+    }
+
+    while (pos < content.size() && std::isspace(static_cast<unsigned char>(content[pos]))) pos++;
+    if (pos < content.size() && content[pos] != ',' && content[pos] != '}') {
+        throw std::runtime_error("load: invalid trailing characters for key " + key);
+    }
+
+    return value;
+}
+
+}  // namespace
+
 SegmentManager::SegmentManager(Dim dim, std::size_t segment_capacity, const std::string& db_path,
-                               int m, int ef_construction)
+                               HnswBuildParams params)
     : dim_(dim),
       segment_capacity_(segment_capacity),
-      m_(m),
-      ef_construction_(ef_construction),
+      build_params_(params),
       db_path_(db_path),
-      active_(std::make_unique<ActiveSegment>(dim, segment_capacity, m, ef_construction)) {
+      active_(std::make_unique<ActiveSegment>(dim, segment_capacity, params)) {
     if (segment_capacity == 0) {
         throw std::invalid_argument("SegmentManager: segment_capacity must be > 0");
     }
@@ -41,7 +81,7 @@ void SegmentManager::insert(VectorId user_id, std::span<const float> data) {
 }
 
 std::vector<QueryResult> SegmentManager::search(std::span<const float> query, std::size_t k,
-                                                int ef_search) const {
+                                                HnswSearchParams params) const {
     if (query.size() != dim_) {
         throw std::invalid_argument("SegmentManager: expected " + std::to_string(dim_) +
                                     " dimensions, got " + std::to_string(query.size()));
@@ -49,12 +89,12 @@ std::vector<QueryResult> SegmentManager::search(std::span<const float> query, st
     std::vector<QueryResult> all;
 
     if (active_->size() > 0) {
-        auto r = active_->search(query.data(), k, ef_search);
+        auto r = active_->search(query.data(), k, params);
         all.insert(all.end(), r.begin(), r.end());
     }
 
     for (const auto& seg : sealed_) {
-        auto r = seg.search(query.data(), k, ef_search);
+        auto r = seg.search(query.data(), k, params);
         all.insert(all.end(), r.begin(), r.end());
     }
 
@@ -69,7 +109,12 @@ void SegmentManager::seal_active() {
     if (!db_path_.empty()) {
         std::string seg_dir = db_path_ + "/segment_" + std::to_string(sealed_.size());
         serialize_segment(*active_, seg_dir);
-        sealed_.push_back(load_segment_mmap(seg_dir));
+        auto sealed = load_segment_mmap(seg_dir);
+        // Register the sealed segment immediately: without this, a crash before the
+        // next save() would leave the segment directory on disk but unreferenced,
+        // and load() would silently drop it.
+        write_segments_json(sealed_.size() + 1);
+        sealed_.push_back(std::move(sealed));
     } else {
         auto store = active_->take_store();
         auto graph = active_->take_graph();
@@ -77,7 +122,7 @@ void SegmentManager::seal_active() {
         sealed_.push_back(
             SealedSegment::from_memory(std::move(store), std::move(graph), std::move(ids)));
     }
-    active_ = std::make_unique<ActiveSegment>(dim_, segment_capacity_, m_, ef_construction_);
+    active_ = std::make_unique<ActiveSegment>(dim_, segment_capacity_, build_params_);
 }
 
 void SegmentManager::save() {
@@ -100,17 +145,29 @@ void SegmentManager::save() {
 }
 
 void SegmentManager::write_segments_json(std::size_t total) const {
-    std::ofstream out(db_path_ + "/segments.json");
-    if (!out) throw std::runtime_error("save: cannot write segments.json");
+    // Write to a temp file and rename over segments.json so a crash mid-write
+    // cannot corrupt the existing registry.
+    const std::string final_path = db_path_ + "/segments.json";
+    const std::string tmp_path = final_path + ".tmp";
 
-    out << "{\n";
-    out << "  \"version\": 1,\n";
-    out << "  \"dim\": " << dim_ << ",\n";
-    out << "  \"segment_capacity\": " << segment_capacity_ << ",\n";
-    out << "  \"m\": " << m_ << ",\n";
-    out << "  \"ef_construction\": " << ef_construction_ << ",\n";
-    out << "  \"segment_count\": " << total << "\n";
-    out << "}\n";
+    {
+        std::ofstream out(tmp_path, std::ios::trunc);
+        if (!out) throw std::runtime_error("write_segments_json: cannot write " + tmp_path);
+
+        out << "{\n";
+        out << "  \"format_version\": " << k_segments_json_format_version << ",\n";
+        out << "  \"dim\": " << dim_ << ",\n";
+        out << "  \"segment_capacity\": " << segment_capacity_ << ",\n";
+        out << "  \"m\": " << build_params_.m << ",\n";
+        out << "  \"ef_construction\": " << build_params_.ef_construction << ",\n";
+        out << "  \"segment_count\": " << total << "\n";
+        out << "}\n";
+
+        out.flush();
+        if (!out) throw std::runtime_error("write_segments_json: write failed for " + tmp_path);
+    }
+
+    std::filesystem::rename(tmp_path, final_path);
 }
 
 SegmentManager SegmentManager::load(const std::string& path) {
@@ -119,31 +176,49 @@ SegmentManager SegmentManager::load(const std::string& path) {
 
     std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 
-    auto extract_uint = [&](const std::string& key) -> unsigned long long {
-        auto pos = content.find("\"" + key + "\"");
-        if (pos == std::string::npos) throw std::runtime_error("load: missing key " + key);
-        pos = content.find(':', pos);
-        try {
-            return std::stoull(content.substr(pos + 1));
-        } catch (const std::exception& e) {
-            throw std::runtime_error("load: invalid value for key '" + key +
-                                     "' in segments.json: " + e.what());
+    const auto format_version = extract_json_uint(content, "format_version");
+    if (format_version != k_segments_json_format_version) {
+        throw std::runtime_error("load: unsupported segments.json format_version");
+    }
+
+    auto extract_dim = [&](const std::string& key) -> Dim {
+        const auto value = extract_json_uint(content, key);
+        if (value > static_cast<unsigned long long>((std::numeric_limits<Dim>::max)())) {
+            throw std::runtime_error("load: value out of range for key " + key);
         }
+        return static_cast<Dim>(value);
     };
 
-    Dim dim = static_cast<Dim>(extract_uint("dim"));
-    auto capacity = static_cast<std::size_t>(extract_uint("segment_capacity"));
-    auto m = static_cast<int>(extract_uint("m"));
-    auto ef = static_cast<int>(extract_uint("ef_construction"));
+    auto extract_size = [&](const std::string& key) -> std::size_t {
+        const auto value = extract_json_uint(content, key);
+        if (value > static_cast<unsigned long long>((std::numeric_limits<std::size_t>::max)())) {
+            throw std::runtime_error("load: value out of range for key " + key);
+        }
+        return static_cast<std::size_t>(value);
+    };
 
-    const unsigned long long seg_count_raw = extract_uint("segment_count");
+    auto extract_int = [&](const std::string& key) -> int {
+        const auto value = extract_json_uint(content, key);
+        if (value > static_cast<unsigned long long>((std::numeric_limits<int>::max)())) {
+            throw std::runtime_error("load: value out of range for key " + key);
+        }
+        return static_cast<int>(value);
+    };
+
+    Dim dim = extract_dim("dim");
+    auto capacity = extract_size("segment_capacity");
+    HnswBuildParams params;
+    params.m = extract_int("m");
+    params.ef_construction = extract_int("ef_construction");
+
+    const unsigned long long seg_count_raw = extract_json_uint(content, "segment_count");
     if (seg_count_raw >
         static_cast<unsigned long long>((std::numeric_limits<std::size_t>::max)())) {
         throw std::runtime_error("load: segment_count out of range");
     }
     const std::size_t seg_count = static_cast<std::size_t>(seg_count_raw);
 
-    SegmentManager mgr(dim, capacity, path, m, ef);
+    SegmentManager mgr(dim, capacity, path, params);
 
     for (std::size_t i = 0; i < seg_count; i++) {
         mgr.sealed_.push_back(load_segment_mmap(path + "/segment_" + std::to_string(i)));
