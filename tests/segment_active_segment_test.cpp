@@ -112,7 +112,7 @@ TEST(ActiveSegment, RecallWithRandomVectors) {
     std::vector<float> query(dim);
     for (auto& x : query) x = dist(rng);
 
-    auto results = seg.search(query.data(), 10, 128);
+    auto results = seg.search(query.data(), 10, vextor::HnswSearchParams{.ef_search = 128});
     ASSERT_EQ(results.size(), 10);
 
     // Results should be sorted by distance.

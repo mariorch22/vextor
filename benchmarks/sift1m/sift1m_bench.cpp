@@ -197,8 +197,10 @@ int main(int argc, char* argv[]) {
                   << " ef_construction=" << group.index.ef_construction << " ===" << std::endl;
 
         // Build via SegmentManager — capacity > base_count so no seal fires during build.
-        vextor::SegmentManager db(static_cast<vextor::Dim>(base_dim), 1'100'000, "", group.index.m,
-                                  group.index.ef_construction);
+        vextor::SegmentManager db(
+            static_cast<vextor::Dim>(base_dim), 1'100'000, "",
+            vextor::HnswBuildParams{.m = group.index.m,
+                                    .ef_construction = group.index.ef_construction});
 
         auto t0 = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < base_count; i++) {
@@ -223,16 +225,17 @@ int main(int argc, char* argv[]) {
             for (int q = 0; q < warmup; q++) {
                 (void)db.search({&queries[static_cast<std::size_t>(q) * query_dim],
                                  static_cast<std::size_t>(query_dim)},
-                                100, sc.ef_search);
+                                100, vextor::HnswSearchParams{.ef_search = sc.ef_search});
             }
 
             // Pass 1: reine Suche — nur dieser Block wird für QPS gemessen.
             std::vector<std::vector<vextor::QueryResult>> all_results(query_count);
             auto t2 = std::chrono::high_resolution_clock::now();
             for (int q = 0; q < query_count; q++) {
-                all_results[q] = db.search({&queries[static_cast<std::size_t>(q) * query_dim],
-                                            static_cast<std::size_t>(query_dim)},
-                                           100, sc.ef_search);
+                all_results[q] =
+                    db.search({&queries[static_cast<std::size_t>(q) * query_dim],
+                               static_cast<std::size_t>(query_dim)},
+                              100, vextor::HnswSearchParams{.ef_search = sc.ef_search});
             }
             auto t3 = std::chrono::high_resolution_clock::now();
 

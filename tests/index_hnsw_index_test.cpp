@@ -32,7 +32,7 @@ TEST(HnswIndex, InsertSingleVector) {
     std::vector<float> vec = {1.0f, 2.0f, 3.0f, 4.0f};
     store.add_vector(vec.data());
 
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
     index.insert();
 
     EXPECT_EQ(index.graph().size(), 1);
@@ -42,7 +42,7 @@ TEST(HnswIndex, InsertSingleVector) {
 
 TEST(HnswIndex, InsertMultipleVectors) {
     auto store = make_random_store(100, 32);
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
 
     for (vextor::Offset i = 0; i < 100; i++) {
         index.insert();
@@ -53,7 +53,7 @@ TEST(HnswIndex, InsertMultipleVectors) {
 
 TEST(HnswIndex, InsertWithoutAvailableVectorThrows) {
     vextor::InMemoryStore store(4);
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
 
     EXPECT_THROW(index.insert(), std::out_of_range);
 }
@@ -63,7 +63,7 @@ TEST(HnswIndex, InsertPastStoreSizeThrows) {
     std::vector<float> vec = {1.0f, 2.0f, 3.0f, 4.0f};
     store.add_vector(vec.data());
 
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
     index.insert();
 
     EXPECT_THROW(index.insert(), std::out_of_range);
@@ -71,7 +71,7 @@ TEST(HnswIndex, InsertPastStoreSizeThrows) {
 
 TEST(HnswIndex, SearchEmptyIndex) {
     vextor::InMemoryStore store(4);
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
 
     std::vector<float> query = {1.0f, 2.0f, 3.0f, 4.0f};
     auto results = index.search(query.data(), 10);
@@ -83,7 +83,7 @@ TEST(HnswIndex, SearchSingleVector) {
     std::vector<float> vec = {1.0f, 0.0f, 0.0f};
     store.add_vector(vec.data());
 
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
     index.insert();
 
     std::vector<float> query = {0.0f, 0.0f, 0.0f};
@@ -96,7 +96,7 @@ TEST(HnswIndex, SearchSingleVector) {
 
 TEST(HnswIndex, SearchKZeroReturnsEmpty) {
     auto store = make_random_store(10, 8);
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
     for (int i = 0; i < 10; i++) index.insert();
 
     std::vector<float> query(8, 0.0f);
@@ -106,7 +106,7 @@ TEST(HnswIndex, SearchKZeroReturnsEmpty) {
 
 TEST(HnswIndex, ResultsSortedByDistance) {
     auto store = make_random_store(500, 32);
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
     for (int i = 0; i < 500; i++) index.insert();
 
     std::vector<float> query(32, 0.0f);
@@ -121,7 +121,7 @@ TEST(HnswIndex, ResultsSortedByDistance) {
 
 TEST(HnswIndex, BidirectionalEdges) {
     auto store = make_random_store(500, 32);
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
     for (int i = 0; i < 500; i++) index.insert();
 
     const auto& g = index.graph();
@@ -161,7 +161,7 @@ TEST(HnswIndex, BidirectionalEdges) {
 
 TEST(HnswIndex, MaxNeighborConstraint) {
     auto store = make_random_store(500, 32);
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
     for (int i = 0; i < 500; i++) index.insert();
 
     const auto& g = index.graph();
@@ -183,7 +183,7 @@ TEST(HnswIndex, MaxNeighborConstraint) {
 
 TEST(HnswIndex, LayerDistribution) {
     auto store = make_random_store(10000, 32);
-    vextor::HnswIndex index(store, 16);
+    vextor::HnswIndex index(store);
     for (int i = 0; i < 10000; i++) index.insert();
 
     const auto& g = index.graph();
@@ -222,7 +222,7 @@ TEST(HnswIndex, RecallAt10Above85Percent) {
     auto store = make_random_store(n, dim, 42);
 
     // Build HNSW index.
-    vextor::HnswIndex hnsw(store, 16, 200);
+    vextor::HnswIndex hnsw(store);
     for (int i = 0; i < n; i++) hnsw.insert();
 
     // Build flat index as ground truth.
@@ -237,7 +237,8 @@ TEST(HnswIndex, RecallAt10Above85Percent) {
         std::vector<float> query(dim);
         for (auto& x : query) x = dist(rng);
 
-        auto hnsw_results = hnsw.search(query.data(), k, 128);
+        auto hnsw_results =
+            hnsw.search(query.data(), k, vextor::HnswSearchParams{.ef_search = 128});
         auto flat_results = flat.search(query.data(), k);
 
         // Count how many of HNSW's top-k are in the true top-k.

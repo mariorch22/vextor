@@ -17,6 +17,7 @@
 #include "core/distance.h"
 #include "core/search_result.h"
 #include "core/types.h"
+#include "index/hnsw_params.h"
 #include "store/concept.h"
 
 namespace vextor {
@@ -44,16 +45,15 @@ struct HnswGraph {
 template <VectorStore Store>
 class HnswIndex {
    public:
-    explicit HnswIndex(const Store& store, int m, int ef_construction = 200)
-        : store_(store), ef_construction_(ef_construction) {
-        if (m <= 1) throw std::invalid_argument("HnswIndex: m must be > 1");
-        if (ef_construction <= 0)
+    explicit HnswIndex(const Store& store, HnswBuildParams params = {})
+        : store_(store), build_params_(params) {
+        if (params.m <= 1) throw std::invalid_argument("HnswIndex: m must be > 1");
+        if (params.ef_construction <= 0)
             throw std::invalid_argument("HnswIndex: ef_construction must be > 0");
-        graph_.m = m;
+        graph_.m = params.m;
     }
 
-    HnswIndex(const Store& store, HnswGraph graph)
-        : store_(store), graph_(std::move(graph)), ef_construction_(0) {
+    HnswIndex(const Store& store, HnswGraph graph) : store_(store), graph_(std::move(graph)) {
         resize_visited(graph_.size());
     }
 
@@ -93,7 +93,7 @@ class HnswIndex {
         for (int layer = std::min(level, graph_.max_level); layer >= 0; layer--) {
             int mmax = max_connections(layer);
 
-            auto candidates = greedy_search(query, layer, start, ef_construction_);
+            auto candidates = greedy_search(query, layer, start, build_params_.ef_construction);
             start = candidates[0];
 
             auto selected = select_neighbors_heuristic(query, candidates, mmax);
@@ -148,10 +148,11 @@ class HnswIndex {
     // ── Search ───────────────────────────────────────────────
 
     [[nodiscard]] std::vector<SearchResult> search(const float* query, std::size_t k,
-                                                   int ef_search = 64) const {
+                                                   HnswSearchParams params = {}) const {
         if (graph_.empty || k == 0) return {};
+        if (params.ef_search <= 0) throw std::invalid_argument("HnswIndex: ef_search must be > 0");
 
-        ef_search = std::max(static_cast<int>(k), ef_search);
+        int ef_search = std::max(static_cast<int>(k), params.ef_search);
 
         Offset current = graph_.entry_point;
         for (int layer = graph_.max_level; layer >= 1; layer--) {
@@ -176,7 +177,7 @@ class HnswIndex {
    private:
     const Store& store_;
     HnswGraph graph_;
-    int ef_construction_;
+    HnswBuildParams build_params_;
 
     // Fixed seed for reproducible graph construction.
     std::mt19937 rng_{42};

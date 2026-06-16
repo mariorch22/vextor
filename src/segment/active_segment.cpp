@@ -4,8 +4,8 @@
 
 namespace vextor {
 
-ActiveSegment::ActiveSegment(Dim dim, std::size_t capacity, int m, int ef_construction)
-    : store_(dim), index_(store_, m, ef_construction), capacity_(capacity) {}
+ActiveSegment::ActiveSegment(Dim dim, std::size_t capacity, HnswBuildParams params)
+    : store_(dim), index_(store_, params), capacity_(capacity) {}
 
 void ActiveSegment::insert(VectorId user_id, const float* data) {
     if (is_full()) {
@@ -26,8 +26,8 @@ void ActiveSegment::insert(VectorId user_id, const float* data) {
 }
 
 std::vector<QueryResult> ActiveSegment::search(const float* query, std::size_t k,
-                                               int ef_search) const {
-    auto internal = index_.search(query, k, ef_search);
+                                               HnswSearchParams params) const {
+    auto internal = index_.search(query, k, params);
     std::vector<QueryResult> results;
     results.reserve(internal.size());
     for (const auto& r : internal) {

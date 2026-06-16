@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "core/types.h"
+#include "index/hnsw_params.h"
 #include "segment/active_segment.h"
 #include "segment/sealed_segment.h"
 
@@ -17,11 +18,11 @@ class SegmentManager {
    public:
     // Create a new database at the given path (or in-memory if path is empty).
     explicit SegmentManager(Dim dim, std::size_t segment_capacity, const std::string& db_path = "",
-                            int m = 16, int ef_construction = 200);
+                            HnswBuildParams params = {});
 
     void insert(VectorId user_id, std::span<const float> data);
     [[nodiscard]] std::vector<QueryResult> search(std::span<const float> query, std::size_t k,
-                                                  int ef_search = 128) const;
+                                                  HnswSearchParams params = {}) const;
 
     // Flush: persist the active segment and write segments.json.
     void save();
@@ -36,8 +37,7 @@ class SegmentManager {
    private:
     Dim dim_;
     std::size_t segment_capacity_;
-    int m_;
-    int ef_construction_;
+    HnswBuildParams build_params_;
     std::string db_path_;
     std::unique_ptr<ActiveSegment> active_;
     std::vector<SealedSegment> sealed_;

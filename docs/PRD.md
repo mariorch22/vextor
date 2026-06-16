@@ -145,7 +145,7 @@ v0.2 introduces parallel search across sealed segments. The guarantees:
 
 No write-ahead log. The design accepts data loss of the current ActiveSegment on crash — only sealed and persisted segments survive. This is an explicit tradeoff: WAL complexity is not justified for a batch-insert workload where the source data (embeddings from a model) is reproducible.
 
-Persistence is atomic at the segment level: seal() writes the three segment files (vectors.bin, hnsw.bin, ids.bin); segments.json — the registry that decides what load() reads — is only written by save(), and last. A crash therefore loses the current ActiveSegment plus any segments sealed since the last save(): their directories exist on disk but are never referenced, so load() simply ignores them. A *referenced* segment with missing or truncated files fails load() with an explicit error — no partial state is loaded.
+Persistence is atomic at the segment level from the loader's perspective: seal() writes the three segment files (vectors.bin, hnsw.bin, ids.bin) and then updates segments.json — the registry that decides what load() reads. The registry is replaced via temp file + rename, so a crash mid-write should not expose torn JSON. Without fsync, power-loss durability still depends on the filesystem; the implementation aims to reduce the data-loss window to the current ActiveSegment, but does not claim full crash-durable commits. A *referenced* segment with missing or truncated files fails load() with an explicit error — no partial state is loaded.
 
 ## Correctness and testing
 

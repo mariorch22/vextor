@@ -8,6 +8,7 @@
 #include "core/search_result.h"
 #include "core/types.h"
 #include "index/hnsw_index.h"
+#include "index/hnsw_params.h"
 #include "segment/id_mapping.h"
 #include "store/in_memory_store.h"
 #include "store/mmap_store.h"
@@ -20,7 +21,7 @@ class SealedSegment {
     static SealedSegment from_mmap(MmapStore store, HnswGraph graph, IdMapping id_mapping);
 
     [[nodiscard]] std::vector<QueryResult> search(const float* query, std::size_t k,
-                                                  int ef_search = 128) const;
+                                                  HnswSearchParams params = {}) const;
 
     std::size_t size() const;
     Dim dimensions() const;
@@ -32,7 +33,7 @@ class SealedSegment {
     struct Backend {
         virtual ~Backend() = default;
         virtual std::vector<SearchResult> search(const float* query, std::size_t k,
-                                                 int ef_search) const = 0;
+                                                 HnswSearchParams params) const = 0;
         virtual std::size_t size() const = 0;
         virtual Dim dimensions() const = 0;
     };
@@ -46,8 +47,8 @@ class SealedSegment {
             : store(std::move(s)), index(store, std::move(graph)) {}
 
         std::vector<SearchResult> search(const float* query, std::size_t k,
-                                         int ef_search) const override {
-            return index.search(query, k, ef_search);
+                                         HnswSearchParams params) const override {
+            return index.search(query, k, params);
         }
         std::size_t size() const override { return store.size(); }
         Dim dimensions() const override { return store.dimensions(); }

@@ -9,7 +9,7 @@
 // Helper: build an ActiveSegment, extract its components, and create a SealedSegment.
 static vextor::SealedSegment make_sealed_from_active(int n, vextor::Dim dim) {
     vextor::InMemoryStore store(dim);
-    vextor::HnswIndex<vextor::InMemoryStore> index(store, 16, 200);
+    vextor::HnswIndex<vextor::InMemoryStore> index(store);
     vextor::IdMapping id_mapping;
 
     std::mt19937 rng(42);
@@ -35,7 +35,7 @@ TEST(SealedSegment, SizeAndDimensions) {
 
 TEST(SealedSegment, SearchReturnsUserIds) {
     vextor::InMemoryStore store(2);
-    vextor::HnswIndex<vextor::InMemoryStore> index(store, 16);
+    vextor::HnswIndex<vextor::InMemoryStore> index(store);
     vextor::IdMapping id_mapping;
 
     store.add_vector(std::vector<float>{0.0f, 0.0f}.data());
@@ -74,7 +74,7 @@ TEST(SealedSegment, SearchResultsSortedByDistance) {
     std::vector<float> query(32);
     for (auto& x : query) x = dist(rng);
 
-    auto results = seg.search(query.data(), 10, 128);
+    auto results = seg.search(query.data(), 10, vextor::HnswSearchParams{.ef_search = 128});
     ASSERT_EQ(results.size(), 10);
 
     for (std::size_t i = 1; i < results.size(); i++) {
@@ -91,7 +91,7 @@ TEST(SealedSegment, NoInsertAvailable) {
 
 TEST(SealedSegment, LargeUserIdPreserved) {
     vextor::InMemoryStore store(2);
-    vextor::HnswIndex<vextor::InMemoryStore> index(store, 16);
+    vextor::HnswIndex<vextor::InMemoryStore> index(store);
     vextor::IdMapping id_mapping;
 
     vextor::VectorId big_id = 1ULL << 40;
